@@ -1,0 +1,131 @@
+filename,city_name,lat,lng,heading,fov,pitch,image_size,country,population,Continent,population_group
+imgs_v2/0.jpg,Huacho,-11.10717164755454,-77.60389394199734,31,100,0,640,Peru,200585.0,South America,medium_urban
+imgs_v2/1.jpg,Rio Claro,-22.411889691365445,-47.561899583960574,115,100,0,640,Brazil,201418.0,South America,medium_urban
+imgs_v2/2.jpg,Northcote,-36.80164023305115,174.74817994619693,257,100,0,640,New Zealand,205605.0,Oceania,medium_urban
+imgs_v2/3.jpg,Padova,45.416782867357554,11.867654720654508,163,100,0,640,Italy,206496.0,Europe,medium_urban
+imgs_v2/4.jpg,Wellington,-41.29039692296838,174.7773615308925,327,100,0,640,New Zealand,216200.0,Oceania,medium_urban
+imgs_v2/5.jpg,Cartagena,37.599979378181935,-0.9851699380336694,132,100,0,640,Spain,218050.0,Europe,medium_urban
+imgs_v2/6.jpg,Deltona,28.905194766893548,-81.21314050990483,95,100,0,640,United States,221137.0,North America,medium_urban
+imgs_v2/7.jpg,Ipswich,-27.615464978940928,152.76170887489175,310,100,0,640,Australia,232930.0,Oceania,medium_urban
+imgs_v2/8.jpg,Magdeburg,52.131045618808805,11.63807787194832,42,100,0,640,Germany,239364.0,Europe,medium_urban
+imgs_v2/9.jpg,Americana,-22.73724049900195,-47.330311488417536,236,100,0,640,Brazil,242018.0,South America,medium_urban
+imgs_v2/10.jpg,Campeche,19.85006420247529,-90.52963743961004,303,100,0,640,Mexico,249623.0,North America,medium_urban
+imgs_v2/11.jpg,Montgomery,32.34762922465129,-86.26770989524765,333,100,0,640,United States,251158.0,North America,medium_urban
+imgs_v2/12.jpg,Isparta,37.76374223076624,30.55625644078141,222,100,0,640,Turkey,258375.0,Asia,medium_urban
+imgs_v2/13.jpg,Heroica Nogales,31.319252926920687,-110.94420221005814,221,100,0,640,Mexico,261137.0,North America,medium_urban
+imgs_v2/14.jpg,Wollongong,-34.43442799020678,150.883469479652,287,100,0,640,Australia,261896.0,Oceania,medium_urban
+imgs_v2/15.jpg,Wilmington,34.209245839935434,-77.88743824006355,306,100,0,640,United States,268625.0,North America,medium_urban
+imgs_v2/16.jpg,Iasi,47.16320050512051,27.58994027304764,356,100,0,640,Romania,271692.0,Europe,medium_urban
+imgs_v2/17.jpg,Novorossiysk,44.71660801981605,37.78297474961523,329,100,0,640,Russia,273278.0,Europe,medium_urban
+imgs_v2/18.jpg,Pilar,-34.450758034749235,-58.91665656491576,284,100,0,640,Argentina,296826.0,South America,medium_urban
+imgs_v2/19.jpg,Catania,37.49935292951805,15.088638888374044,16,100,0,640,Italy,298762.0,Europe,medium_urban
+imgs_v2/20.jpg,San Juan del Rio,20.384079442751588,-99.98302373896692,13,100,0,640,Mexico,301237.0,North America,medium_urban
+imgs_v2/21.jpg,San Bernardo,-33.58356118093701,-70.69846656638653,173,100,0,640,Chile,301313.0,South America,medium_urban
+imgs_v2/22.jpg,Kochi,33.55851726154116,133.5301193674259,317,100,0,640,Japan,325535.0,Asia,medium_urban
+imgs_v2/23.jpg,Antioch,37.978253259357054,-121.79451419102436,136,100,0,640,United States,327216.0,North America,medium_urban
+imgs_v2/24.jpg,Ribeirao das Neves,-19.76647823999604,-44.08615983998034,349,100,0,640,Brazil,329794.0,South America,medium_urban
+imgs_v2/25.jpg,Paulista,-7.939923331481888,-34.87396822205003,18,100,0,640,Brazil,342167.0,South America,medium_urban
+imgs_v2/26.jpg,Nice,43.70265845529927,7.267003704713757,205,100,0,640,France,348085.0,Europe,medium_urban
+imgs_v2/27.jpg,Kawagoe,35.925321584833,139.48654497206027,48,100,0,640,Japan,354598.0,Asia,medium_urban
+imgs_v2/28.jpg,Florence,43.771799224277096,11.252131110072282,234,100,0,640,Italy,360930.0,Europe,medium_urban
+imgs_v2/29.jpg,Blumenau,-26.93355140622632,-49.05144116904405,271,100,0,640,Brazil,361261.0,South America,medium_urban
+imgs_v2/30.jpg,Iligan,8.230988559872495,124.24908147596658,24,100,0,640,Philippines,363115.0,Asia,medium_urban
+imgs_v2/31.jpg,Bauru,-22.315010043398907,-49.05925058905966,135,100,0,640,Brazil,366992.0,South America,medium_urban
+imgs_v2/32.jpg,Manukau City,-36.99902909975837,174.8840226243775,190,100,0,640,New Zealand,375600.0,Oceania,medium_urban
+imgs_v2/33.jpg,Canberra,-35.29434654325532,149.1259275798973,91,100,0,640,Australia,381488.0,Oceania,medium_urban
+imgs_v2/34.jpg,Christchurch,-43.53240843092294,172.63697738910557,149,100,0,640,New Zealand,383200.0,Oceania,medium_urban
+imgs_v2/35.jpg,Diadema,-23.685586685856745,-46.60972812964131,193,100,0,640,Brazil,393237.0,South America,medium_urban
+imgs_v2/36.jpg,Thies,14.784797412461044,-16.916586381401796,303,100,0,640,Senegal,394544.0,Africa,medium_urban
+imgs_v2/37.jpg,Ivanovo,56.9980670523186,40.98267160650356,266,100,0,640,Russia,401505.0,Europe,medium_urban
+imgs_v2/38.jpg,Ado-Ekiti,7.622281958181751,5.220700912191698,48,100,0,640,Nigeria,446749.0,Africa,medium_urban
+imgs_v2/39.jpg,Cranbourne,-38.09850915376512,145.283306967017,192,100,0,640,Australia,460491.0,Oceania,medium_urban
+imgs_v2/40.jpg,Long Beach,33.79856455540654,-118.16736328073468,211,100,0,640,United States,462293.0,North America,medium_urban
+imgs_v2/41.jpg,Angeles City,15.147326575975658,120.5848921993027,258,100,0,640,Philippines,462928.0,Asia,medium_urban
+imgs_v2/42.jpg,Nishinomiya-hama,34.738289430017055,135.3401458160054,281,100,0,640,Japan,487010.0,Asia,medium_urban
+imgs_v2/43.jpg,Duisburg,51.43549493416411,6.762817764115703,160,100,0,640,Germany,502211.0,Europe,metropolitan
+imgs_v2/44.jpg,Serra,-20.129829656700696,-40.30900602690102,31,100,0,640,Brazil,520649.0,South America,metropolitan
+imgs_v2/45.jpg,Concord,37.971527011880646,-122.00311634923104,299,100,0,640,United States,288783.0,North America,medium_urban
+imgs_v2/46.jpg,Salta,-24.78431809061344,-65.41644423989604,138,100,0,640,Argentina,535303.0,South America,metropolitan
+imgs_v2/47.jpg,Ryazan,54.63059997421349,39.739999836909945,323,100,0,640,Russia,537622.0,Europe,metropolitan
+imgs_v2/48.jpg,Akron,41.07955273492219,-81.52085782647393,177,100,0,640,United States,541945.0,North America,metropolitan
+imgs_v2/49.jpg,Valledupar,10.482737590906147,-73.2490351862362,224,100,0,640,Colombia,544134.0,South America,metropolitan
+imgs_v2/50.jpg,The Hague,52.07912850350967,4.311351996258281,232,100,0,640,Netherlands,548320.0,Europe,metropolitan
+imgs_v2/51.jpg,Cuautitlan Izcalli,19.649028063763943,-99.2513034753548,147,100,0,640,Mexico,555163.0,North America,metropolitan
+imgs_v2/52.jpg,Pereira,4.813366124900431,-75.69385441098392,263,100,0,640,Colombia,590554.0,South America,metropolitan
+imgs_v2/53.jpg,Gold Coast,-28.016421779347763,153.40139276034773,61,100,0,640,Australia,607665.0,Oceania,metropolitan
+imgs_v2/54.jpg,Khabarovsk,48.48323265079006,135.08375942846055,263,100,0,640,Russia,616242.0,Europe,metropolitan
+imgs_v2/55.jpg,Glasgow,55.85974654323299,-4.250393850464042,207,100,0,640,United Kingdom,626410.0,Europe,metropolitan
+imgs_v2/56.jpg,Makati City,14.556626672203398,121.02161459892582,306,100,0,640,Philippines,629616.0,Asia,metropolitan
+imgs_v2/57.jpg,Honcho,35.69582524788478,139.98311370368918,155,100,0,640,Japan,644668.0,Asia,metropolitan
+imgs_v2/58.jpg,Rotterdam,51.92121542773032,4.47875001862594,112,100,0,640,Netherlands,664311.0,Europe,metropolitan
+imgs_v2/59.jpg,George Town,5.414813950049784,100.3289860005691,195,100,0,640,Malaysia,708127.0,Asia,metropolitan
+imgs_v2/60.jpg,Fresno,36.782938368975145,-119.7925236674957,169,100,0,640,United States,725276.0,North America,metropolitan
+imgs_v2/61.jpg,Santo Andre,-23.656598422367992,-46.53251113722495,157,100,0,640,Brazil,748919.0,South America,metropolitan
+imgs_v2/62.jpg,Leeds,53.79856552538367,-1.5455098238924887,83,100,0,640,United Kingdom,789194.0,Europe,metropolitan
+imgs_v2/63.jpg,Bhubaneshwar,20.26442464533441,85.82732936557565,252,100,0,640,India,837737.0,Asia,metropolitan
+imgs_v2/64.jpg,Pietermaritzburg,-29.6159886020204,30.382763250513648,285,100,0,640,South Africa,839327.0,Africa,metropolitan
+imgs_v2/65.jpg,Iguacu,-22.73936444101118,-43.469987911185925,201,100,0,640,Brazil,844583.0,South America,metropolitan
+imgs_v2/66.jpg,Southampton,50.90343721702496,-1.4060119062771037,116,100,0,640,United Kingdom,855569.0,Europe,metropolitan
+imgs_v2/67.jpg,El Dorado,24.80913717830466,-107.39768234082568,298,100,0,640,Mexico,858638.0,North America,metropolitan
+imgs_v2/68.jpg,Saltillo,25.42309130746925,-100.99085763674968,243,100,0,640,Mexico,864431.0,North America,metropolitan
+imgs_v2/69.jpg,Eskisehir,39.77710970280699,30.52170689783776,277,100,0,640,Turkey,871187.0,Asia,metropolitan
+imgs_v2/70.jpg,Taguig City,14.519118863421117,121.0487978228703,213,100,0,640,Philippines,886722.0,Asia,metropolitan
+imgs_v2/71.jpg,Merida,20.970212089998583,-89.61962505481115,344,100,0,640,Mexico,892363.0,North America,metropolitan
+imgs_v2/72.jpg,Hartford,41.76487980290483,-72.68448255287713,246,100,0,640,United States,974684.0,North America,metropolitan
+imgs_v2/73.jpg,Bareilly,28.36383772153533,79.41652267661979,0,100,0,640,India,1000000.0,Asia,metropolitan
+imgs_v2/74.jpg,Sevilla,37.389997019562834,-5.989874132740445,328,100,0,640,Spain,1100000.0,Europe,metropolitan
+imgs_v2/75.jpg,Ufa,54.72532432122813,55.94836206838395,333,100,0,640,Russia,1115560.0,Europe,metropolitan
+imgs_v2/76.jpg,Campinas,-22.90653424334664,-47.06080221016232,184,100,0,640,Brazil,1213792.0,South America,metropolitan
+imgs_v2/77.jpg,Dublin,53.35034930555702,-6.257919330438815,38,100,0,640,Ireland,1263219.0,Europe,metropolitan
+imgs_v2/78.jpg,Soweto,-26.26697713653517,27.858290605581416,348,100,0,640,South Africa,1271628.0,Africa,metropolitan
+imgs_v2/79.jpg,Rosario,-32.95621921183447,-60.638472406123135,121,100,0,640,Argentina,1276000.0,South America,metropolitan
+imgs_v2/80.jpg,Adelaide,-34.928196716229564,138.60112484018768,172,100,0,640,Australia,1295714.0,Oceania,metropolitan
+imgs_v2/81.jpg,Meerut,28.98017556772532,77.71098785665728,24,100,0,640,India,1305429.0,Asia,metropolitan
+imgs_v2/82.jpg,Auckland,-36.839887349823904,174.73996438167464,249,100,0,640,New Zealand,1346091.0,Oceania,metropolitan
+imgs_v2/83.jpg,Valencia,39.46877044109437,-0.3764723709652003,46,100,0,640,Spain,1595000.0,Europe,large_metropolitan
+imgs_v2/84.jpg,Novosibirsk,55.05131267155506,82.94952770970573,148,100,0,640,Russia,1625631.0,Europe,large_metropolitan
+imgs_v2/85.jpg,Zhongli,24.9640444423917,121.21805741030812,290,100,0,640,Taiwan,1632616.0,Asia,large_metropolitan
+imgs_v2/86.jpg,Kampala,0.3132695044337492,32.58053226628638,161,100,0,640,Uganda,1680600.0,Africa,large_metropolitan
+imgs_v2/87.jpg,Quito,-0.2214907695391321,-78.51230789053866,311,100,0,640,Ecuador,1763275.0,South America,large_metropolitan
+imgs_v2/88.jpg,Port Harcourt,4.8243574806674046,7.034761647037402,30,100,0,640,Nigeria,1865000.0,Africa,large_metropolitan
+imgs_v2/89.jpg,Santa Cruz,-17.799953350842074,-63.18171439845661,342,100,0,640,Bolivia,1867673.0,South America,large_metropolitan
+imgs_v2/90.jpg,Santos,-23.93727304126492,-46.32655031059696,8,100,0,640,Brazil,1897551.0,South America,large_metropolitan
+imgs_v2/91.jpg,Almaty,43.23969841241272,76.91340802053772,186,100,0,640,Kazakhstan,1916822.0,Asia,large_metropolitan
+imgs_v2/92.jpg,Sacramento,38.56815266351094,-121.4676811545785,283,100,0,640,United States,1957738.0,North America,large_metropolitan
+imgs_v2/93.jpg,Indore,22.716429932196974,75.84604824624493,242,100,0,640,India,1994397.0,Asia,large_metropolitan
+imgs_v2/94.jpg,Tijuana,32.52533011430577,-117.03259664095587,14,100,0,640,Mexico,2002000.0,North America,large_metropolitan
+imgs_v2/95.jpg,Portland,45.536908415462726,-122.64848275950844,291,100,0,640,United States,2095808.0,North America,large_metropolitan
+imgs_v2/96.jpg,Depok,-6.395319759356757,106.82205772272955,151,100,0,640,Indonesia,2123349.0,Asia,large_metropolitan
+imgs_v2/97.jpg,Perth,-31.95721329458412,115.8596740879819,28,100,0,640,Australia,2141834.0,Oceania,large_metropolitan
+imgs_v2/98.jpg,Awka,6.205456493082354,7.067432057757978,17,100,0,640,Nigeria,2171900.0,Africa,large_metropolitan
+imgs_v2/99.jpg,Vienna,48.20901583808698,16.370700783043336,42,100,0,640,Austria,2223236.0,Europe,large_metropolitan
+imgs_v2/100.jpg,Riverside,33.937736627190986,-117.3934723270249,300,100,0,640,United States,2332836.0,North America,large_metropolitan
+imgs_v2/101.jpg,Brisbane,-27.466970215677364,153.02841065589942,21,100,0,640,Australia,2360241.0,Oceania,large_metropolitan
+imgs_v2/102.jpg,Cali,3.4211478535406954,-76.52097918022581,40,100,0,640,Colombia,2471474.0,South America,large_metropolitan
+imgs_v2/103.jpg,Hamburg,53.549562418869016,9.998920753686011,242,100,0,640,Germany,2484800.0,Europe,large_metropolitan
+imgs_v2/104.jpg,Medellin,6.230883970540293,-75.59018715041944,201,100,0,640,Colombia,2529403.0,South America,large_metropolitan
+imgs_v2/105.jpg,Rome,41.89350094507098,12.4817887795371,47,100,0,640,Italy,2748109.0,Europe,large_metropolitan
+imgs_v2/106.jpg,Stuttgart,48.77619088944567,9.180350334876325,226,100,0,640,Germany,2787724.0,Europe,large_metropolitan
+imgs_v2/107.jpg,Brasilia,-15.794269427225377,-47.88287775927413,74,100,0,640,Brazil,2817068.0,South America,large_metropolitan
+imgs_v2/108.jpg,Tampa,27.9940773812154,-82.44575870383284,194,100,0,640,United States,2861173.0,North America,large_metropolitan
+imgs_v2/109.jpg,Kyiv,50.44979598955378,30.52095390730035,218,100,0,640,Ukraine,2952301.0,Europe,large_metropolitan
+imgs_v2/110.jpg,Guatemala City,14.61420731409444,-90.534664584483,50,100,0,640,Guatemala,3014000.0,North America,large_metropolitan
+imgs_v2/111.jpg,Ibadan,7.3973762084227905,3.9157077978794494,234,100,0,640,Nigeria,3552000.0,Africa,large_metropolitan
+imgs_v2/112.jpg,Yokohama,35.44447621140535,139.63725922826492,139,100,0,640,Japan,3757630.0,Asia,large_metropolitan
+imgs_v2/113.jpg,Fortaleza,-3.7267827077000018,-38.5279604049771,312,100,0,640,Brazil,4167996.0,South America,large_metropolitan
+imgs_v2/114.jpg,Barcelona,41.382238239578506,2.175471621066279,320,100,0,640,Spain,4800000.0,Europe,large_metropolitan
+imgs_v2/115.jpg,Sydney,-33.867976483098154,151.20895857201165,350,100,0,640,Australia,4840600.0,Oceania,large_metropolitan
+imgs_v2/116.jpg,Berlin,52.5190608744343,13.406092596989955,227,100,0,640,Germany,4890363.0,Europe,large_metropolitan
+imgs_v2/117.jpg,Melbourne,-37.8156719091886,144.9634481858502,279,100,0,640,Australia,5031195.0,Oceania,large_metropolitan
+imgs_v2/118.jpg,Washington,38.9049548386172,-77.0146460003162,25,100,0,640,United States,5116378.0,North America,large_metropolitan
+imgs_v2/119.jpg,Washington,38.90607990899908,-77.01603134557492,32,100,0,640,United States,5116378.0,North America,large_metropolitan
+imgs_v2/120.jpg,Washington,38.90406346803543,-77.0170536900632,356,100,0,640,United States,5116378.0,North America,large_metropolitan
+imgs_v2/121.jpg,Washington,38.904337243966346,-77.01491344532057,333,100,0,640,United States,5116378.0,North America,large_metropolitan
+imgs_v2/122.jpg,Atlanta,33.76405698484631,-84.42152265108341,256,100,0,640,United States,5180179.0,North America,large_metropolitan
+imgs_v2/123.jpg,Belo Horizonte,-19.91634564607284,-43.93364623607021,158,100,0,640,Brazil,5328000.0,South America,large_metropolitan
+imgs_v2/124.jpg,Santiago,-33.437042011593746,-70.64960047451629,237,100,0,640,Chile,7171000.0,South America,large_metropolitan
+imgs_v2/125.jpg,Paris,48.85688098264019,2.352794161465005,236,100,0,640,France,11060000.0,Europe,large_metropolitan
+imgs_v2/126.jpg,Rio de Janeiro,-22.91014905808784,-43.20471208805829,253,100,0,640,Brazil,12592000.0,South America,large_metropolitan
+imgs_v2/127.jpg,Moscow,55.75548824927793,37.61989825662994,131,100,0,640,Russia,17332000.0,Europe,large_metropolitan
+imgs_v2/128.jpg,Dhaka,23.764286749979288,90.38941419009552,52,100,0,640,Bangladesh,18627000.0,Asia,large_metropolitan
+imgs_v2/129.jpg,Tokyo,35.68852237717605,139.69225775137588,323,100,0,640,Japan,37732000.0,Asia,large_metropolitan
