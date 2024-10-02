@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+server/apart-location-inference-f196f-firebase-adminsdk-y5t42-efe95c8dc4.json
+src/firebase/firebaseConfig.js

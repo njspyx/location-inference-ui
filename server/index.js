@@ -1,3 +1,6 @@
+// NOTE
+// Server code is useful for local development, but has been phased out for production in favor or built in Firebase functionality.
+
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -28,55 +31,57 @@ app.get("/api/images", (req, res) => {
     });
 });
 
-// Save user results
-app.post("/api/submit", (req, res) => {
-  const data = req.body;
-  const resultsFile = path.join(__dirname, "results.csv");
+// // Save user results
+// app.post("/api/submit", (req, res) => {
+//   const data = req.body;
+//   const resultsFile = path.join(__dirname, "results.csv");
 
-  // Categories to be used as columns
-  const categories = [
-    "Climate",
-    "Architecture",
-    "Street Signs",
-    "Language",
-    "Landmark",
-    "Vegetation",
-    "Vehicle",
-    "Urban Layout",
-    "Cultural Element",
-  ];
+//   // Categories to be used as columns
+//   const categories = [
+//     "Climate",
+//     "Architecture",
+//     "Street Signs",
+//     "Language",
+//     "Landmark",
+//     "Vegetation",
+//     "Vehicle",
+//     "Urban Layout",
+//     "Cultural Element",
+//   ];
 
-  // One-hot encode categories
-  const categoryData = {};
-  categories.forEach((category) => {
-    categoryData[category] = data.categories.includes(category) ? 1 : 0;
-  });
+//   // One-hot encode categories
+//   const categoryData = {};
+//   categories.forEach((category) => {
+//     categoryData[category] = data.categories.includes(category) ? 1 : 0;
+//   });
 
-  const csvWriter = createCsvWriter({
-    path: resultsFile,
-    header: [
-      { id: "filename", title: "Filename" },
-      { id: "userLat", title: "User Latitude" },
-      { id: "userLng", title: "User Longitude" },
-      { id: "distance", title: "Distance" },
-      ...categories.map((category) => ({ id: category, title: category })),
-    ],
-    append: fs.existsSync(resultsFile), // Append if file exists
-  });
+//   const csvWriter = createCsvWriter({
+//     path: resultsFile,
+//     header: [
+//       { id: "filename", title: "Filename" },
+//       { id: "userLat", title: "User Latitude" },
+//       { id: "userLng", title: "User Longitude" },
+//       { id: "distance", title: "Distance" },
+//       { id: "timeTaken", title: "Time Taken (s)" }, // Added timeTaken to header
+//       ...categories.map((category) => ({ id: category, title: category })),
+//     ],
+//     append: fs.existsSync(resultsFile), // Append if file exists
+//   });
 
-  const record = {
-    filename: data.filename,
-    userLat: data.userLat,
-    userLng: data.userLng,
-    distance: data.distance,
-    ...categoryData,
-  };
+//   const record = {
+//     filename: data.filename,
+//     userLat: data.userLat,
+//     userLng: data.userLng,
+//     distance: data.distance,
+//     timeTaken: data.timeTaken, // Added timeTaken to record
+//     ...categoryData,
+//   };
 
-  csvWriter
-    .writeRecords([record])
-    .then(() => res.json({ success: true }))
-    .catch((err) => res.status(500).send(err));
-});
+//   csvWriter
+//     .writeRecords([record])
+//     .then(() => res.json({ success: true }))
+//     .catch((err) => res.status(500).send(err));
+// });
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
