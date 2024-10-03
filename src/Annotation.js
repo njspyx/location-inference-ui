@@ -1,9 +1,20 @@
-// src/Annotation (game).js
-
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import MapComponent from "./MapComponent";
 import { auth, firestore, storage } from "./firebase/firebase";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Grid,
+  Paper,
+  Box,
+  IconButton,
+} from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 function Annotation({ user }) {
   // image state
@@ -159,6 +170,11 @@ function Annotation({ user }) {
 
   // "Next" button handler
   const handleNext = async () => {
+    if (selectedCategories.length === 0) {
+      alert("Please select at least one category at the bottom.");
+      return;
+    }
+
     // save user results to Firestore
     const currentImageData = imgsData[currentImageIdx];
 
@@ -241,7 +257,7 @@ function Annotation({ user }) {
     return <div>No more images! You have completed the task.</div>;
   }
 
-  const currentImageData = imgsData[currentImageIdx];
+  // const currentImageData = imgsData[currentImageIdx];
 
   // Categories for checkboxes
   const categories = [
@@ -257,65 +273,125 @@ function Annotation({ user }) {
   ];
 
   return (
-    <div>
-      <button onClick={handleSignOut}>Sign Out</button>
-      <div>
-        <h1>Guess the coordinates of Image {currentImageIdx + 1}</h1>
-        {imageURL && (
-          <img
-            src={imageURL}
-            alt="Guess"
-            style={{ width: "640px", height: "auto" }}
-          />
-        )}
-        <MapComponent
-          key={currentImageIdx} // Force remount on image change
-          onSelectCoords={setSubmittedCoords}
-          submittedCoords={submittedCoords}
-          actualCoords={actualCoords}
-        />
-        <p>Time: {formatTime(elapsedTime)}</p>
-        {submittedCoords && (
-          <p>
-            Selected Coordinates: {submittedCoords.lat.toFixed(4)},{" "}
-            {submittedCoords.lng.toFixed(4)}
-          </p>
-        )}
-        {distance && actualCoords && (
-          <div>
-            <p>Your guess was {distance.toFixed(2)} km away.</p>
-            <p>
-              Actual Coordinates: {actualCoords.lat.toFixed(4)},{" "}
-              {actualCoords.lng.toFixed(4)}
-            </p>
-          </div>
-        )}
-        <button onClick={handleSubmit} disabled={isSubmitted}>
-          Submit
-        </button>
-        <button onClick={handleNext} disabled={!isSubmitted}>
-          Next
-        </button>
+    <div className="root">
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" style={{ flexGrow: 1 }}>
+            Coordinate Guessing Game
+          </Typography>
+          <Button
+            color="inherit"
+            onClick={handleSignOut}
+            startIcon={<LogoutIcon />}
+          >
+            Sign Out
+          </Button>
+        </Toolbar>
+      </AppBar>
 
-        {isSubmitted && (
-          <div>
-            <h3>What details from the image did you use to make your guess?</h3>
-            {categories.map((category) => (
-              <div key={category}>
-                <label>
-                  <input
-                    type="checkbox"
-                    value={category}
-                    checked={selectedCategories.includes(category)}
-                    onChange={handleCategoryChange}
-                  />
-                  {category}
-                </label>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <Box p={2}>
+        <Typography variant="h5" gutterBottom>
+          Guess the coordinates of Image {currentImageIdx + 1} of{" "}
+          {imgsData.length}
+        </Typography>
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Paper elevation={3} style={{ padding: "10px" }}>
+              {imageURL && (
+                <img
+                  src={imageURL}
+                  alt="Guess"
+                  style={{ width: "100%", height: "auto" }}
+                />
+              )}
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6} container direction="column" spacing={2}>
+            <Grid item style={{ height: "450px" }}>
+              <Paper elevation={3} style={{ height: "100%", padding: "10px" }}>
+                <MapComponent
+                  onSelectCoords={setSubmittedCoords}
+                  submittedCoords={submittedCoords}
+                  actualCoords={actualCoords}
+                />
+              </Paper>
+            </Grid>{" "}
+            <Grid item mt={4}>
+              <Typography variant="body1">
+                Time: {formatTime(elapsedTime)}
+              </Typography>
+              {submittedCoords && (
+                <Typography variant="body1">
+                  Selected Coordinates: {submittedCoords.lat.toFixed(4)},{" "}
+                  {submittedCoords.lng.toFixed(4)}
+                </Typography>
+              )}
+              {distance && actualCoords && (
+                <Box mt={2}>
+                  <Typography variant="h6">
+                    Your guess was {distance.toFixed(2)} km away.
+                  </Typography>
+                  <Typography variant="body1">
+                    Actual Coordinates: {actualCoords.lat.toFixed(4)},{" "}
+                    {actualCoords.lng.toFixed(4)}
+                  </Typography>
+                </Box>
+              )}
+              <Box mt={2}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmit}
+                  disabled={isSubmitted}
+                  className="submit-button"
+                  style={{ marginRight: "10px" }}
+                >
+                  Submit
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleNext}
+                  disabled={!isSubmitted}
+                >
+                  Next
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </Grid>
+
+        <Box mt={2}>
+          {isSubmitted && (
+            <Box mt={3}>
+              <Typography variant="h6">
+                What details from the image did you use to make your guess?
+              </Typography>
+              <FormGroup>
+                <Grid container spacing={1}>
+                  {categories.map((category) => (
+                    <Grid item xs={12} sm={6} md={4} key={category}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            value={category}
+                            checked={selectedCategories.includes(category)}
+                            onChange={handleCategoryChange}
+                            color="primary"
+                          />
+                        }
+                        label={category}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              </FormGroup>
+            </Box>
+          )}
+        </Box>
+      </Box>
     </div>
   );
 }

@@ -7,8 +7,8 @@ import {
 } from "@react-google-maps/api";
 
 const mapContainerStyle = {
-  width: "640px",
-  height: "400px",
+  width: "100%",
+  height: "100%",
 };
 
 const center = {
@@ -47,46 +47,48 @@ function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
   if (!isLoaded) return "Loading Maps";
 
   return (
-    <GoogleMap
-      mapContainerStyle={mapContainerStyle}
-      zoom={2}
-      center={center}
-      onClick={onMapClick}
-      onLoad={onMapLoad}
-      options={{
-        disableDefaultUI: true,
-        zoomControl: true,
-        streetViewControl: false,
-        mapTypeControl: false,
-      }}
-    >
-      {submittedCoords && (
-        <Marker
-          position={submittedCoords}
-          icon={{
-            url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-          }}
-        />
-      )}
-      {actualCoords && (
-        <Marker
-          position={actualCoords}
-          icon={{
-            url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-          }}
-        />
-      )}
-      {submittedCoords && actualCoords && (
-        <Polyline
-          path={[submittedCoords, actualCoords]}
-          options={{
-            strokeColor: "#FF0000",
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-          }}
-        />
-      )}
-    </GoogleMap>
+    <div style={{ width: "100%", height: "100%" }}>
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={2}
+        center={center}
+        onClick={onMapClick}
+        onLoad={onMapLoad}
+        options={{
+          disableDefaultUI: true,
+          zoomControl: true,
+          streetViewControl: false,
+          mapTypeControl: false,
+        }}
+      >
+        {submittedCoords && (
+          <Marker
+            position={submittedCoords}
+            icon={{
+              url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            }}
+          />
+        )}
+        {actualCoords && (
+          <Marker
+            position={actualCoords}
+            icon={{
+              url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+            }}
+          />
+        )}
+        {submittedCoords && actualCoords && (
+          <Polyline
+            path={[submittedCoords, actualCoords]}
+            options={{
+              strokeColor: "#FF0000",
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+            }}
+          />
+        )}
+      </GoogleMap>
+    </div>
   );
 }
 
