@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import MapComponent from "./MapComponent";
-import { auth, firestore, storage } from "./firebase/firebase";
+import MapComponent from "../components/MapComponent";
+import { auth, firestore, storage } from "../firebase/firebase";
 import {
   AppBar,
   Toolbar,
@@ -277,7 +277,7 @@ function Annotation({ user }) {
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" style={{ flexGrow: 1 }}>
-            Coordinate Guessing Game
+            Location Inference Game
           </Typography>
           <Button
             color="inherit"

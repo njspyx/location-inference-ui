@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { auth } from "./firebase/firebase";
-import SignUp from "./SignUp";
-import Login from "./Login";
-import Annotation from "./Annotation";
+import SignUp from "./pages/SignUp";
+import Login from "./pages/Login";
+import Annotation from "./pages/Annotation";
 
 function App() {
   const [user, setUser] = useState(null);
