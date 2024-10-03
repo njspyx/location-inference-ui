@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { auth } from "./firebase/firebase";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
