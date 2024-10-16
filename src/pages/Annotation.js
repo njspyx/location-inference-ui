@@ -28,6 +28,10 @@ function Annotation({ user }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
 
+  const [totalDistance, setTotalDistance] = useState(0);
+  const [guessCount, setGuessCount] = useState(0);
+  const [averageDistance, setAverageDistance] = useState(0);
+
   const [isLoading, setIsLoading] = useState(true);
 
   // timer
@@ -58,7 +62,7 @@ function Annotation({ user }) {
 
   // In Annotation.js
 
-  const fetchUserAssignedImages = async () => {
+  const fetchUserData = async () => {
     try {
       const userRef = firestore.collection("users").doc(user.uid);
       const userDoc = await userRef.get();
@@ -101,6 +105,18 @@ function Annotation({ user }) {
           // All images completed
           setImgsData([]);
         }
+
+        const totalDist = userData.totalDistance || 0;
+        const guessCnt = userData.guessCount || 0;
+
+        setTotalDistance(totalDist);
+        setGuessCount(guessCnt);
+
+        if (guessCnt > 0) {
+          setAverageDistance(totalDist / guessCnt);
+        } else {
+          setAverageDistance(0);
+        }
       }
       setIsLoading(false);
     } catch (error) {
@@ -110,7 +126,7 @@ function Annotation({ user }) {
 
   // Fetch user's assigned images on initial render
   useEffect(() => {
-    fetchUserAssignedImages();
+    fetchUserData();
   }, [user]);
 
   // Update imageURL when currentImageIdx changes
@@ -188,13 +204,14 @@ function Annotation({ user }) {
   };
 
   // "Next" button handler
+  // "Next" button handler
   const handleNext = async () => {
     if (selectedCategories.length === 0) {
       alert("Please select at least one category at the bottom.");
       return;
     }
 
-    // save user results to Firestore
+    // Save user results to Firestore
     const currentImageData = imgsData[currentImageIdx];
 
     const userRef = firestore.collection("users").doc(user.uid);
@@ -209,47 +226,50 @@ function Annotation({ user }) {
     };
 
     try {
-      // Create user document it doesn't exist
+      // Add the guessData to the user's guesses subcollection
+      await userRef.collection("guesses").add(guessData);
+
+      // Update totalDistance and guessCount in user's document
       await userRef.set(
         {
-          email: user.email,
+          totalDistance: firebase.firestore.FieldValue.increment(distance),
+          guessCount: firebase.firestore.FieldValue.increment(1),
         },
         { merge: true }
       );
 
-      // Add the guessData to the user's guesses subcollection
-      await userRef.collection("guesses").add(guessData);
+      // Fetch updated user data to update average distance
+      await fetchUserData();
+
+      // Move to next image
+      const nextIndex = currentImageIdx + 1;
+
+      // Update user's currentImageIndex in Firestore
+      await userRef.update({
+        currentImageIndex: nextIndex,
+      });
+
+      setCurrentImageIdx(nextIndex);
+
+      // Reset state
+      setSubmittedCoords(null);
+      setDistance(null);
+      setActualCoords(null);
+      setIsSubmitted(false);
+      setSelectedCategories([]);
+      setElapsedTime(0);
+
+      // Reset timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prevTime) => prevTime + 1);
+      }, 1000);
     } catch (error) {
       console.error("Error saving data:", error);
     }
-
-    // mvoe to next image
-    const nextIndex = currentImageIdx + 1;
-
-    // Update user's currentImageIndex in Firestore
-    await firestore.collection("users").doc(user.uid).update({
-      currentImageIndex: nextIndex,
-    });
-
-    setCurrentImageIdx(nextIndex);
-
-    // reset state
-    setSubmittedCoords(null);
-    setDistance(null);
-    setActualCoords(null);
-    setIsSubmitted(false);
-    setSelectedCategories([]);
-    setElapsedTime(0);
-
-    // reset timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    timerRef.current = setInterval(() => {
-      setElapsedTime((prevTime) => prevTime + 1);
-    }, 1000);
   };
-
   // Inside the Annotation component
 
   const handleRequestMoreImages = async () => {
@@ -291,7 +311,7 @@ function Annotation({ user }) {
       });
 
       // After successfully adding new images, fetch updated data
-      await fetchUserAssignedImages();
+      await fetchUserData();
 
       alert("30 more images have been assigned to you.");
     } catch (error) {
@@ -356,9 +376,6 @@ function Annotation({ user }) {
     <div className="root">
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" style={{ flexGrow: 1 }}>
-            Location Inference Game
-          </Typography>
           <Button
             color="inherit"
             onClick={handleSignOut}
@@ -366,6 +383,10 @@ function Annotation({ user }) {
           >
             Sign Out
           </Button>
+
+          <Typography variant="h6" style={{ flexGrow: 1, textAlign: "center" }}>
+            Avg Score: {averageDistance.toFixed(2)} km
+          </Typography>
         </Toolbar>
       </AppBar>
 

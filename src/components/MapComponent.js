@@ -1,10 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import {
-  GoogleMap,
-  useLoadScript,
-  Marker,
-  Polyline,
-} from "@react-google-maps/api";
+import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
 
 const mapContainerStyle = {
   width: "100%",
@@ -18,10 +13,11 @@ const center = {
 
 function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: "YOUR_API_KEY", // Replace with your API key
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY, // Replace with your API key
   });
 
   const mapRef = useRef();
+  const polylineRef = useRef(null);
 
   const onMapLoad = useCallback((map) => {
     mapRef.current = map;
@@ -36,18 +32,62 @@ function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
     [onSelectCoords]
   );
 
+  // Manage Polyline creation and removal
+  useEffect(() => {
+    if (mapRef.current) {
+      if (submittedCoords && actualCoords) {
+        // Remove existing Polyline if it exists
+        if (polylineRef.current) {
+          polylineRef.current.setMap(null);
+        }
+
+        // Create a new Polyline
+        const polyline = new window.google.maps.Polyline({
+          path: [submittedCoords, actualCoords],
+          geodesic: true,
+          strokeColor: "#FF0000",
+          strokeOpacity: 1.0,
+          strokeWeight: 2,
+        });
+
+        // Set the Polyline on the map
+        polyline.setMap(mapRef.current);
+
+        // Save the Polyline instance
+        polylineRef.current = polyline;
+      } else {
+        // Remove the Polyline if either coordinate is null
+        if (polylineRef.current) {
+          polylineRef.current.setMap(null);
+          polylineRef.current = null;
+        }
+      }
+    }
+  }, [submittedCoords, actualCoords]);
+
+  // Clean up the Polyline when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (polylineRef.current) {
+        polylineRef.current.setMap(null);
+        polylineRef.current = null;
+      }
+    };
+  }, []);
+
+  // Adjust the map view when actualCoords changes
   useEffect(() => {
     if (mapRef.current) {
       if (actualCoords) {
         mapRef.current.panTo(actualCoords);
         mapRef.current.setZoom(4);
-      } else if (!actualCoords && !submittedCoords) {
-        // Both actualCoords and submittedCoords are null, reset the map
+      } else {
+        // Reset map to initial center and zoom if actualCoords is null
         mapRef.current.panTo(center);
         mapRef.current.setZoom(2);
       }
     }
-  }, [actualCoords, submittedCoords]);
+  }, [actualCoords]);
 
   if (loadError) return "Error loading maps";
   if (!isLoaded) return "Loading Maps";
@@ -80,16 +120,6 @@ function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
             position={actualCoords}
             icon={{
               url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
-            }}
-          />
-        )}
-        {submittedCoords && actualCoords && (
-          <Polyline
-            path={[submittedCoords, actualCoords]}
-            options={{
-              strokeColor: "#FF0000",
-              strokeOpacity: 0.8,
-              strokeWeight: 2,
             }}
           />
         )}
