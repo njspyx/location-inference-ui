@@ -25,7 +25,6 @@ function Login({ onUserSignedIn }) {
         alert(
           "Your email is not verified. Please check your inbox and verify your email address."
         );
-        // Optionally, resend verification email
         await user.sendEmailVerification();
         alert("A new verification email has been sent to your email address.");
       }

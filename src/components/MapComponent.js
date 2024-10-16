@@ -13,7 +13,7 @@ const center = {
 
 function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY, // Replace with your API key
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
   });
 
   const mapRef = useRef();
@@ -65,7 +65,7 @@ function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
     }
   }, [submittedCoords, actualCoords]);
 
-  // Clean up the Polyline when the component unmounts
+  // reset polylineRef on unmount
   useEffect(() => {
     return () => {
       if (polylineRef.current) {
@@ -75,14 +75,14 @@ function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
     };
   }, []);
 
-  // Adjust the map view when actualCoords changes
+  // ff actualCoords is set, pan to the actualCoords and set zoom to 4
   useEffect(() => {
     if (mapRef.current) {
       if (actualCoords) {
         mapRef.current.panTo(actualCoords);
         mapRef.current.setZoom(4);
       } else {
-        // Reset map to initial center and zoom if actualCoords is null
+        // else reset map
         mapRef.current.panTo(center);
         mapRef.current.setZoom(2);
       }

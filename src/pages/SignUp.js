@@ -1,4 +1,3 @@
-// SignUp.js
 import React, { useState } from "react";
 import { auth, firestore } from "../firebase/firebase";
 import {
@@ -26,7 +25,7 @@ function SignUp({ onUserSignedIn }) {
       // Send email verification
       await user.sendEmailVerification();
 
-      // Use a transaction to get and update nextImageIndex
+      // retrieve and update assigned images and next image index
       await firestore.runTransaction(async (transaction) => {
         const settingsRef = firestore
           .collection("settings")
@@ -41,7 +40,7 @@ function SignUp({ onUserSignedIn }) {
         const totalNumberOfImages = data.totalNumberOfImages;
         let nextImageIndex = data.nextImageIndex || 0;
 
-        // Compute assigned images
+        // compute assigned images; get N next images in list and wrap around if necessary
         const assignedImages = [];
         for (let i = 0; i < totalImages; i++) {
           const imageIndex = (nextImageIndex + i) % totalNumberOfImages;
@@ -49,12 +48,12 @@ function SignUp({ onUserSignedIn }) {
           assignedImages.push(imageId);
         }
 
-        // Update nextImageIndex
+        // Get the next image index using settings collection
         const newNextImageIndex =
           (nextImageIndex + totalImages) % totalNumberOfImages;
         transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
 
-        // Save assigned images to user's document
+        // save assigned images to user document
         const userRef = firestore.collection("users").doc(user.uid);
         transaction.set(userRef, {
           email: user.email,

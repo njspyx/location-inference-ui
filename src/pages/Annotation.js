@@ -17,27 +17,39 @@ import {
 import LogoutIcon from "@mui/icons-material/Logout";
 
 function Annotation({ user }) {
+  // ################ STATE VARS ################
+  // page state
+  const [isLoading, setIsLoading] = useState(true);
   // image state
   const [imgsData, setImgsData] = useState([]);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
   const [imageURL, setImageURL] = useState("");
 
+  // user state for each image
   const [submittedCoords, setSubmittedCoords] = useState(null);
   const [distance, setDistance] = useState(null);
   const [actualCoords, setActualCoords] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
 
+  // user state over time
   const [totalDistance, setTotalDistance] = useState(0);
   const [guessCount, setGuessCount] = useState(0);
   const [averageDistance, setAverageDistance] = useState(0);
-
-  const [isLoading, setIsLoading] = useState(true);
 
   // timer
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef(null);
 
+  // ################ UTIL FUNCTIONS ################
+  // Format elapsed time as MM:SS
+  const formatTime = (totalSeconds) => {
+    const minutes = Math.floor(totalSeconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  };
   // Haversine formula to calculate distance between two coordinates
   // copied from benchmark notebook
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -60,8 +72,7 @@ function Annotation({ user }) {
     return distance;
   };
 
-  // In Annotation.js
-
+  // Fetchs user data from firestore, include: current assigned image, toatal distance, guess count, average distance
   const fetchUserData = async () => {
     try {
       const userRef = firestore.collection("users").doc(user.uid);
@@ -74,9 +85,9 @@ function Annotation({ user }) {
         const currentIndex = userData.currentImageIndex || 0;
         setCurrentImageIdx(currentIndex);
 
-        // Fetch image data for assigned images
+        // Fetch image urls in batches
         const imagesData = [];
-        const batchSize = 10; // Firestore 'in' queries accept up to 10 items
+        const batchSize = 10;
         for (let i = 0; i < assignedImages.length; i += batchSize) {
           const batchIds = assignedImages.slice(i, i + batchSize);
           const querySnapshot = await firestore
@@ -124,13 +135,12 @@ function Annotation({ user }) {
     }
   };
 
-  // Fetch user's assigned images on initial render
+  // ################ USE EFFECTS ################
   useEffect(() => {
     fetchUserData();
   }, [user]);
 
-  // Update imageURL when currentImageIdx changes
-  // Inside your useEffect for loading the current image URL
+  // loads image using url
   useEffect(() => {
     const loadImageURL = async () => {
       if (imgsData.length > 0 && currentImageIdx < imgsData.length) {
@@ -140,7 +150,6 @@ function Annotation({ user }) {
           .getDownloadURL();
         setImageURL(url);
 
-        // Optionally preload the next image
         if (currentImageIdx + 1 < imgsData.length) {
           const nextImageData = imgsData[currentImageIdx + 1];
           storage.ref(nextImageData.filename).getDownloadURL();
@@ -173,11 +182,11 @@ function Annotation({ user }) {
     };
   }, [currentImageIdx]);
 
+  // ################ BUTTON HANDLERS ################
   const handleSignOut = () => {
     auth.signOut();
   };
 
-  // "Submit" button handler
   const handleSubmit = () => {
     if (!submittedCoords) {
       alert("Please select a location on the map first!");
@@ -203,8 +212,6 @@ function Annotation({ user }) {
     setIsSubmitted(true);
   };
 
-  // "Next" button handler
-  // "Next" button handler
   const handleNext = async () => {
     if (selectedCategories.length === 0) {
       alert("Please select at least one category at the bottom.");
@@ -270,11 +277,9 @@ function Annotation({ user }) {
       console.error("Error saving data:", error);
     }
   };
-  // Inside the Annotation component
 
   const handleRequestMoreImages = async () => {
     try {
-      // Use a transaction to get and update nextImageIndex
       await firestore.runTransaction(async (transaction) => {
         const settingsRef = firestore
           .collection("settings")
@@ -322,7 +327,7 @@ function Annotation({ user }) {
     }
   };
 
-  // Handler for category checkbox changes
+  // handler for category checkboxes
   const handleCategoryChange = (event) => {
     const { value, checked } = event.target;
     if (checked) {
@@ -332,15 +337,7 @@ function Annotation({ user }) {
     }
   };
 
-  // Format elapsed time as MM:SS
-  const formatTime = (totalSeconds) => {
-    const minutes = Math.floor(totalSeconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-    return `${minutes}:${seconds}`;
-  };
-
+  // ################ RENDER ################
   // Check if all images are done
   if (isLoading) {
     return <div>Loading your assigned images, please wait...</div>;
