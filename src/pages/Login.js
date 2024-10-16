@@ -1,5 +1,14 @@
+// Login.js
 import React, { useState } from "react";
 import { auth } from "../firebase/firebase";
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Box,
+} from "@mui/material";
 
 function Login({ onUserSignedIn }) {
   const [email, setEmail] = useState("");
@@ -26,25 +35,68 @@ function Login({ onUserSignedIn }) {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!email) {
+      alert("Please enter your email address first.");
+      return;
+    }
+    try {
+      await auth.sendPasswordResetEmail(email);
+      alert(
+        "Password reset email has been sent. Please check your inbox to reset your password."
+      );
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
+      alert(error.message);
+    }
+  };
+
   return (
-    <div>
-      <h2>Log In</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <br />
-      <input
-        type="password"
-        placeholder="Password (minimum 6 characters)"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <br />
-      <button onClick={handleLogin}>Log In</button>
-    </div>
+    <Container maxWidth="sm">
+      <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
+        <Typography variant="h4" gutterBottom>
+          Log In
+        </Typography>
+        <Box component="form" noValidate autoComplete="off">
+          <TextField
+            type="email"
+            label="Email"
+            variant="outlined"
+            fullWidth
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            type="password"
+            label="Password (minimum 6 characters)"
+            variant="outlined"
+            fullWidth
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            margin="normal"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleLogin}
+            fullWidth
+            sx={{ marginTop: 2 }}
+          >
+            Log In
+          </Button>
+          <Button
+            variant="text"
+            color="secondary"
+            onClick={handlePasswordReset}
+            fullWidth
+            sx={{ marginTop: 1 }}
+          >
+            Forgot Password?
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 }
 

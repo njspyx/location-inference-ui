@@ -1,5 +1,14 @@
+// SignUp.js
 import React, { useState } from "react";
 import { auth, firestore } from "../firebase/firebase";
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Box,
+} from "@mui/material";
 
 function SignUp({ onUserSignedIn }) {
   const [email, setEmail] = useState("");
@@ -64,24 +73,42 @@ function SignUp({ onUserSignedIn }) {
   };
 
   return (
-    <div>
-      <h2>Sign Up</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <br />
-      <input
-        type="password"
-        placeholder="Password (minimum 6 characters)"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <br />
-      <button onClick={handleSignUp}>Sign Up</button>
-    </div>
+    <Container maxWidth="sm">
+      <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
+        <Typography variant="h4" gutterBottom>
+          Sign Up
+        </Typography>
+        <Box component="form" noValidate autoComplete="off">
+          <TextField
+            type="email"
+            label="Email"
+            variant="outlined"
+            fullWidth
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            type="password"
+            label="Password (minimum 6 characters)"
+            variant="outlined"
+            fullWidth
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            margin="normal"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSignUp}
+            fullWidth
+            sx={{ marginTop: 2 }}
+          >
+            Sign Up
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 }
 

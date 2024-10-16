@@ -18,7 +18,7 @@ const center = {
 
 function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAUir3L7OlFeyLXpW3JoePo_BYfFdeiK6w",
+    googleMapsApiKey: "YOUR_API_KEY", // Replace with your API key
   });
 
   const mapRef = useRef();
@@ -37,11 +37,17 @@ function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
   );
 
   useEffect(() => {
-    if (mapRef.current && actualCoords) {
-      mapRef.current.panTo(actualCoords);
-      mapRef.current.setZoom(4);
+    if (mapRef.current) {
+      if (actualCoords) {
+        mapRef.current.panTo(actualCoords);
+        mapRef.current.setZoom(4);
+      } else if (!actualCoords && !submittedCoords) {
+        // Both actualCoords and submittedCoords are null, reset the map
+        mapRef.current.panTo(center);
+        mapRef.current.setZoom(2);
+      }
     }
-  }, [actualCoords]);
+  }, [actualCoords, submittedCoords]);
 
   if (loadError) return "Error loading maps";
   if (!isLoaded) return "Loading Maps";
