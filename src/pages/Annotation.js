@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import MapComponent from "../components/MapComponent";
 import { auth, firestore, storage } from "../firebase/firebase";
 import firebase from "firebase/compat/app";
@@ -73,7 +73,7 @@ function Annotation({ user }) {
   };
 
   // Fetchs user data from firestore, include: current assigned image, toatal distance, guess count, average distance
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const userRef = firestore.collection("users").doc(user.uid);
       const userDoc = await userRef.get();
@@ -117,14 +117,11 @@ function Annotation({ user }) {
           setImgsData([]);
         }
 
-        const totalDist = userData.totalDistance || 0;
-        const guessCnt = userData.guessCount || 0;
+        setTotalDistance(userData.totalDistance || 0);
+        setGuessCount(userData.guessCount || 0);
 
-        setTotalDistance(totalDist);
-        setGuessCount(guessCnt);
-
-        if (guessCnt > 0) {
-          setAverageDistance(totalDist / guessCnt);
+        if (guessCount > 0) {
+          setAverageDistance(totalDistance / guessCount);
         } else {
           setAverageDistance(0);
         }
@@ -133,12 +130,12 @@ function Annotation({ user }) {
     } catch (error) {
       console.error("Error fetching assigned images:", error);
     }
-  };
+  }, [user.uid, totalDistance, guessCount]);
 
   // ################ USE EFFECTS ################
   useEffect(() => {
     fetchUserData();
-  }, [user]);
+  }, [fetchUserData]);
 
   // loads image using url
   useEffect(() => {
