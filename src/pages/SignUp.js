@@ -14,21 +14,49 @@ function SignUp({ onUserSignedIn }) {
       );
       const user = userCredential.user;
 
-      // fetch all image ids and choose 30 random ones
-      const imagesSnapshot = await firestore.collection("images").get();
-      const imageIDs = imagesSnapshot.docs.map((doc) => doc.id);
+      // Send email verification
+      await user.sendEmailVerification();
 
-      const shuffled = imageIDs.sort(() => 0.5 - Math.random());
-      const assignedImages = shuffled.slice(0, totalImages);
+      // Use a transaction to get and update nextImageIndex
+      await firestore.runTransaction(async (transaction) => {
+        const settingsRef = firestore
+          .collection("settings")
+          .doc("imageAssignment");
+        const settingsDoc = await transaction.get(settingsRef);
 
-      // save list of assigned images to user object in firestore
-      await firestore.collection("users").doc(user.uid).set({
-        email: user.email,
-        assignedImages: assignedImages,
-        currentImageIndex: 0,
+        if (!settingsDoc.exists) {
+          throw new Error("Settings document does not exist.");
+        }
+
+        const data = settingsDoc.data();
+        const totalNumberOfImages = data.totalNumberOfImages;
+        let nextImageIndex = data.nextImageIndex || 0;
+
+        // Compute assigned images
+        const assignedImages = [];
+        for (let i = 0; i < totalImages; i++) {
+          const imageIndex = (nextImageIndex + i) % totalNumberOfImages;
+          const imageId = imageIndex.toString();
+          assignedImages.push(imageId);
+        }
+
+        // Update nextImageIndex
+        const newNextImageIndex =
+          (nextImageIndex + totalImages) % totalNumberOfImages;
+        transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
+
+        // Save assigned images to user's document
+        const userRef = firestore.collection("users").doc(user.uid);
+        transaction.set(userRef, {
+          email: user.email,
+          assignedImages: assignedImages,
+          currentImageIndex: 0,
+        });
       });
 
-      onUserSignedIn();
+      alert(
+        "A verification email has been sent to your email address. Please verify your email before logging in."
+      );
     } catch (error) {
       console.error("Error signing up:", error);
       alert(error.message);
@@ -47,7 +75,7 @@ function SignUp({ onUserSignedIn }) {
       <br />
       <input
         type="password"
-        placeholder="Password"
+        placeholder="Password (minimum 6 characters)"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />

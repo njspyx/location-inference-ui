@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import MapComponent from "../components/MapComponent";
 import { auth, firestore, storage } from "../firebase/firebase";
+import firebase from "firebase/compat/app";
 import {
   AppBar,
   Toolbar,
@@ -26,6 +27,8 @@ function Annotation({ user }) {
   const [actualCoords, setActualCoords] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
+
+  const [isLoading, setIsLoading] = useState(true);
 
   // timer
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -53,54 +56,65 @@ function Annotation({ user }) {
     return distance;
   };
 
+  // In Annotation.js
+
+  const fetchUserAssignedImages = async () => {
+    try {
+      const userRef = firestore.collection("users").doc(user.uid);
+      const userDoc = await userRef.get();
+      const userData = userDoc.data();
+
+      if (userData) {
+        // Get assigned image IDs and current index
+        const assignedImages = userData.assignedImages || [];
+        const currentIndex = userData.currentImageIndex || 0;
+        setCurrentImageIdx(currentIndex);
+
+        // Fetch image data for assigned images
+        const imagesData = [];
+        const batchSize = 10; // Firestore 'in' queries accept up to 10 items
+        for (let i = 0; i < assignedImages.length; i += batchSize) {
+          const batchIds = assignedImages.slice(i, i + batchSize);
+          const querySnapshot = await firestore
+            .collection("images")
+            .where(firebase.firestore.FieldPath.documentId(), "in", batchIds)
+            .get();
+          querySnapshot.forEach((doc) => {
+            imagesData.push({ id: doc.id, ...doc.data() });
+          });
+        }
+
+        // Sort imagesData to maintain order
+        imagesData.sort(
+          (a, b) => assignedImages.indexOf(a.id) - assignedImages.indexOf(b.id)
+        );
+        setImgsData(imagesData);
+
+        // Load the current image's URL
+        if (imagesData.length > 0 && currentIndex < imagesData.length) {
+          const currentImageData = imagesData[currentIndex];
+          const url = await storage
+            .ref(currentImageData.filename)
+            .getDownloadURL();
+          setImageURL(url);
+        } else {
+          // All images completed
+          setImgsData([]);
+        }
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching assigned images:", error);
+    }
+  };
+
   // Fetch user's assigned images on initial render
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const userRef = firestore.collection("users").doc(user.uid);
-        const userDoc = await userRef.get();
-        const userData = userDoc.data();
-
-        if (userData) {
-          // Get assigned image IDs and current index
-          const assignedImages = userData.assignedImages || [];
-          const currentIndex = userData.currentImageIndex || 0;
-          setCurrentImageIdx(currentIndex);
-
-          // Fetch image data for assigned images
-          const imagesData = [];
-          for (const imageId of assignedImages) {
-            const imageDoc = await firestore
-              .collection("images")
-              .doc(imageId)
-              .get();
-            if (imageDoc.exists) {
-              imagesData.push({ id: imageDoc.id, ...imageDoc.data() });
-            }
-          }
-          setImgsData(imagesData);
-
-          // Load the current image's URL
-          if (imagesData.length > 0 && currentIndex < imagesData.length) {
-            const currentImageData = imagesData[currentIndex];
-            const url = await storage
-              .ref(currentImageData.filename)
-              .getDownloadURL();
-            setImageURL(url);
-          } else {
-            // All images completed
-            setImgsData([]);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching assigned images:", error);
-      }
-    };
-
-    fetchData();
+    fetchUserAssignedImages();
   }, [user]);
 
   // Update imageURL when currentImageIdx changes
+  // Inside your useEffect for loading the current image URL
   useEffect(() => {
     const loadImageURL = async () => {
       if (imgsData.length > 0 && currentImageIdx < imgsData.length) {
@@ -109,6 +123,12 @@ function Annotation({ user }) {
           .ref(currentImageData.filename)
           .getDownloadURL();
         setImageURL(url);
+
+        // Optionally preload the next image
+        if (currentImageIdx + 1 < imgsData.length) {
+          const nextImageData = imgsData[currentImageIdx + 1];
+          storage.ref(nextImageData.filename).getDownloadURL();
+        }
       } else {
         setImageURL("");
       }
@@ -230,6 +250,58 @@ function Annotation({ user }) {
     }, 1000);
   };
 
+  // Inside the Annotation component
+
+  const handleRequestMoreImages = async () => {
+    try {
+      // Use a transaction to get and update nextImageIndex
+      await firestore.runTransaction(async (transaction) => {
+        const settingsRef = firestore
+          .collection("settings")
+          .doc("imageAssignment");
+        const settingsDoc = await transaction.get(settingsRef);
+
+        if (!settingsDoc.exists) {
+          throw new Error("Settings document does not exist.");
+        }
+
+        const data = settingsDoc.data();
+        const totalNumberOfImages = data.totalNumberOfImages;
+        let nextImageIndex = data.nextImageIndex || 0;
+
+        // Compute new assigned images
+        const newAssignedImages = [];
+        for (let i = 0; i < 30; i++) {
+          const imageIndex = (nextImageIndex + i) % totalNumberOfImages;
+          const imageId = imageIndex.toString();
+          newAssignedImages.push(imageId);
+        }
+
+        // Update nextImageIndex
+        const newNextImageIndex = (nextImageIndex + 30) % totalNumberOfImages;
+        transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
+
+        // Update user's assignedImages
+        const userRef = firestore.collection("users").doc(user.uid);
+        transaction.update(userRef, {
+          assignedImages: firebase.firestore.FieldValue.arrayUnion(
+            ...newAssignedImages
+          ),
+        });
+      });
+
+      // After successfully adding new images, fetch updated data
+      await fetchUserAssignedImages();
+
+      alert("30 more images have been assigned to you.");
+    } catch (error) {
+      console.error("Error requesting more images:", error);
+      alert(
+        "An error occurred while requesting more images. Please try again."
+      );
+    }
+  };
+
   // Handler for category checkbox changes
   const handleCategoryChange = (event) => {
     const { value, checked } = event.target;
@@ -250,10 +322,19 @@ function Annotation({ user }) {
   };
 
   // Check if all images are done
-  if (imgsData.length === 0) {
-    return <div>Loading...</div>;
-  } else if (currentImageIdx >= imgsData.length) {
-    return <div>No more images! You have completed the task.</div>;
+  if (isLoading) {
+    return <div>Loading your assigned images, please wait...</div>;
+  }
+
+  if (currentImageIdx >= imgsData.length) {
+    return (
+      <div>
+        <h2>No more images! You have completed the task.</h2>
+        <button onClick={handleRequestMoreImages}>
+          Request 30 More Images
+        </button>
+      </div>
+    );
   }
 
   // const currentImageData = imgsData[currentImageIdx];

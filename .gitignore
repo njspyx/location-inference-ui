@@ -17,6 +17,7 @@
 .env.development.local
 .env.test.local
 .env.production.local
+.env
 
 npm-debug.log*
 yarn-debug.log*
@@ -24,4 +25,4 @@ yarn-error.log*
 
 
 # firebase stuff
-server/apart-location-inference-f196f-firebase-adminsdk-y5t42-efe95c8dc4.json
+server/apart-location-inference-*.json

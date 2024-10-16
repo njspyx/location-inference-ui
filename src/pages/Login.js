@@ -8,7 +8,18 @@ function Login({ onUserSignedIn }) {
   const handleLogin = async () => {
     try {
       await auth.signInWithEmailAndPassword(email, password);
-      onUserSignedIn();
+      const user = auth.currentUser;
+
+      if (user.emailVerified) {
+        onUserSignedIn();
+      } else {
+        alert(
+          "Your email is not verified. Please check your inbox and verify your email address."
+        );
+        // Optionally, resend verification email
+        await user.sendEmailVerification();
+        alert("A new verification email has been sent to your email address.");
+      }
     } catch (error) {
       console.error("Error logging in:", error);
       alert(error.message);
@@ -27,7 +38,7 @@ function Login({ onUserSignedIn }) {
       <br />
       <input
         type="password"
-        placeholder="Password"
+        placeholder="Password (minimum 6 characters)"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
