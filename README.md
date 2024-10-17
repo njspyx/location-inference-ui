@@ -2,11 +2,13 @@
 
 Custom app to collect human baseline data for Apart Lab location inference project. We will use [Prolific](https://www.prolific.com/) for crowdsourcing.
 
-## TODO
+## Bugs to Fix
 
-- Fix one-hot encoding criteria for now. Don't allow user to continue if no criteria is selected.
-- Time user guesses and save.
-- Add CSS to make things look better.
-- Connect Firebase (or something else) for the backend.
-- Host the app via netlify or smth
-- Allow user give explainations (in a better way?) somehow and figure out how to save/validate this information.
+(as of 2024-10-16)
+
+- Changing point marker after pressing submit
+- Race conditions; getting the same image again
+- Reloading...?
+- Shuffle images better
+
+- Allow for users to variable amount of images? if we are not crowdsourcing
