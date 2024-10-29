@@ -6,10 +6,8 @@ Custom app to collect human baseline data for Apart Lab location inference proje
 
 (as of 2024-10-16)
 
-- Changing point marker after pressing submit
 - Race conditions; getting the same image again
 - Reloading...?
-- Shuffle images better
 - Add agreement
 - Improve log in page UI
 

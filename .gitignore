@@ -25,7 +25,8 @@ yarn-error.log*
 
 
 # firebase stuff
-server/*.json
+server/*-firebase-admin*.json
 
 # benchmark stuff
 server/coordinates.csv
+server/coordinates.json

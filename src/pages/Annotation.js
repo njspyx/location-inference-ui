@@ -80,7 +80,7 @@ function Annotation({ user }) {
       const userData = userDoc.data();
 
       if (userData) {
-        // Get assigned image IDs and current index
+        // get users assigned images and current image index
         const assignedImages = userData.assignedImages || [];
         const currentIndex = userData.currentImageIndex || 0;
         setCurrentImageIdx(currentIndex);
@@ -105,13 +105,42 @@ function Annotation({ user }) {
         );
         setImgsData(imagesData);
 
-        // Load the current image's URL
+        // load current image url from firebase storage
         if (imagesData.length > 0 && currentIndex < imagesData.length) {
           const currentImageData = imagesData[currentIndex];
           const url = await storage
             .ref(currentImageData.filename)
             .getDownloadURL();
           setImageURL(url);
+
+          // to combat reloading the page after submitting, check if user alr attempted img
+          const guessDoc = await userRef
+            .collection("guesses")
+            .doc(currentImageData.id)
+            .get();
+
+          if (guessDoc.exists) {
+            const guessData = guessDoc.data();
+            if (guessData.isSubmitted) {
+              setSubmittedCoords({
+                lat: guessData.userLat,
+                lng: guessData.userLng,
+              });
+              setDistance(guessData.distance);
+              setActualCoords({
+                lat: parseFloat(currentImageData.lat),
+                lng: parseFloat(currentImageData.lng),
+              });
+              setIsSubmitted(true);
+              setSelectedCategories(guessData.categories || []);
+              setElapsedTime(guessData.timeTaken || 0);
+
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+              }
+            }
+          }
         } else {
           // All images completed
           setImgsData([]);
@@ -161,6 +190,10 @@ function Annotation({ user }) {
 
   // timer effect
   useEffect(() => {
+    if (isSubmitted) {
+      return;
+    }
+
     setElapsedTime(0);
 
     if (timerRef.current) {
@@ -184,19 +217,19 @@ function Annotation({ user }) {
     auth.signOut();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!submittedCoords) {
       alert("Please select a location on the map first!");
       return;
     }
 
-    // stop timer
+    // Stop timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
-    // calculate distance, update state
+    // Calculate distance
     const currentImageData = imgsData[currentImageIdx];
     const actualLat = parseFloat(currentImageData.lat);
     const actualLng = parseFloat(currentImageData.lng);
@@ -207,6 +240,34 @@ function Annotation({ user }) {
     setActualCoords({ lat: actualLat, lng: actualLng });
 
     setIsSubmitted(true);
+
+    // Save users submission to firestore
+    const userRef = firestore.collection("users").doc(user.uid);
+    const currentImageId = imgsData[currentImageIdx].id;
+
+    try {
+      await userRef.collection("guesses").doc(currentImageId).set(
+        {
+          filename: currentImageData.filename,
+          userLat: submittedCoords.lat,
+          userLng: submittedCoords.lng,
+          distance: distance,
+          timeTaken: elapsedTime,
+          timestamp: new Date(),
+          isSubmitted: true,
+        },
+        { merge: true }
+      );
+
+      await userRef.set(
+        {
+          lastSubmittedImageIndex: currentImageIdx,
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error("Error saving submission data:", error);
+    }
   };
 
   const handleNext = async () => {
@@ -215,23 +276,20 @@ function Annotation({ user }) {
       return;
     }
 
-    // Save user results to Firestore
+    // fetch information
     const currentImageData = imgsData[currentImageIdx];
 
     const userRef = firestore.collection("users").doc(user.uid);
-    const guessData = {
-      filename: currentImageData.filename,
-      userLat: submittedCoords.lat,
-      userLng: submittedCoords.lng,
-      distance: distance,
-      timeTaken: elapsedTime,
-      categories: selectedCategories,
-      timestamp: new Date(),
-    };
+    const currentImageId = currentImageData.id;
 
     try {
-      // Add the guessData to the user's guesses subcollection
-      await userRef.collection("guesses").add(guessData);
+      // update users submission data with categories
+      await userRef.collection("guesses").doc(currentImageId).set(
+        {
+          categories: selectedCategories,
+        },
+        { merge: true }
+      );
 
       // Update totalDistance and guessCount in user's document
       await userRef.set(
