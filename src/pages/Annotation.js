@@ -256,6 +256,7 @@ function Annotation({ user }) {
       setCurrentImageIdx(nextIndex);
 
       // Reset state
+      setIsSubmitted(false);
       setSubmittedCoords(null);
       setDistance(null);
       setActualCoords(null);
@@ -410,6 +411,7 @@ function Annotation({ user }) {
                   onSelectCoords={setSubmittedCoords}
                   submittedCoords={submittedCoords}
                   actualCoords={actualCoords}
+                  isSubmitted={isSubmitted}
                 />
               </Paper>
             </Grid>{" "}

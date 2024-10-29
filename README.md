@@ -10,5 +10,7 @@ Custom app to collect human baseline data for Apart Lab location inference proje
 - Race conditions; getting the same image again
 - Reloading...?
 - Shuffle images better
+- Add agreement
+- Improve log in page UI
 
 - Allow for users to variable amount of images? if we are not crowdsourcing

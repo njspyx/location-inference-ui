@@ -11,7 +11,12 @@ const center = {
   lng: 0,
 };
 
-function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
+function MapComponent({
+  onSelectCoords,
+  submittedCoords,
+  actualCoords,
+  isSubmitted,
+}) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
   });
@@ -25,11 +30,12 @@ function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
 
   const onMapClick = useCallback(
     (event) => {
+      if (isSubmitted) return;
       const lat = event.latLng.lat();
       const lng = event.latLng.lng();
       onSelectCoords({ lat, lng });
     },
-    [onSelectCoords]
+    [onSelectCoords, isSubmitted]
   );
 
   // Manage Polyline creation and removal
@@ -105,6 +111,10 @@ function MapComponent({ onSelectCoords, submittedCoords, actualCoords }) {
           zoomControl: true,
           streetViewControl: false,
           mapTypeControl: false,
+          draggable: !isSubmitted,
+          scrollwheel: !isSubmitted,
+          disableDoubleClickZoom: isSubmitted,
+          gestureHandling: isSubmitted ? "none" : "auto",
         }}
       >
         {submittedCoords && (

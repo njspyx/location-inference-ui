@@ -27,4 +27,15 @@ const uploadData = async () => {
   });
 };
 
+// delete current images collection
+firestore
+  .collection("images")
+  .get()
+  .then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      doc.ref.delete();
+    });
+  });
+
+// upload new data
 uploadData().catch((error) => console.error("Error uploading data:", error));

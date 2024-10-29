@@ -25,4 +25,7 @@ yarn-error.log*
 
 
 # firebase stuff
-server/apart-location-inference-*.json
+server/*.json
+
+# benchmark stuff
+server/coordinates.csv
