@@ -7,14 +7,26 @@ import {
   Typography,
   Paper,
   Box,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from "@mui/material";
 
 function SignUp({ onUserSignedIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [region, setRegion] = useState(""); // ask for region to determine what storage bucket to use
+
   const totalImages = 30;
 
   const handleSignUp = async () => {
+    if (!region) {
+      alert("Please select your region.");
+      return;
+    }
+
     try {
       const userCredential = await auth.createUserWithEmailAndPassword(
         email,
@@ -59,6 +71,7 @@ function SignUp({ onUserSignedIn }) {
           email: user.email,
           assignedImages: assignedImages,
           currentImageIndex: 0,
+          region: region,
         });
       });
 
@@ -96,6 +109,47 @@ function SignUp({ onUserSignedIn }) {
             onChange={(e) => setPassword(e.target.value)}
             margin="normal"
           />
+
+          <FormControl component="fieldset" margin="normal">
+            <FormLabel component="legend">Select Your Region</FormLabel>
+            <RadioGroup
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              row
+            >
+              <FormControlLabel
+                value="North America"
+                control={<Radio color="primary" />}
+                label="North America"
+              />
+              <FormControlLabel
+                value="South America"
+                control={<Radio color="primary" />}
+                label="South America"
+              />
+              <FormControlLabel
+                value="Europe"
+                control={<Radio color="primary" />}
+                label="Europe"
+              />
+              <FormControlLabel
+                value="Africa"
+                control={<Radio color="primary" />}
+                label="Africa"
+              />
+              <FormControlLabel
+                value="Asia"
+                control={<Radio color="primary" />}
+                label="Asia"
+              />
+              <FormControlLabel
+                value="Oceania"
+                control={<Radio color="primary" />}
+                label="Oceania"
+              />
+            </RadioGroup>
+          </FormControl>
+
           <Button
             variant="contained"
             color="primary"

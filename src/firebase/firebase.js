@@ -8,12 +8,15 @@ import firebaseConfig from "./firebaseConfig";
 // init firebase
 firebase.initializeApp(firebaseConfig);
 
-const storage = firebase.storage(); //default storage (nam5; US)
+const americaStorage = firebase.storage(); //default storage (nam5; US)
 const asiaStorage = firebase
   .app()
   .storage("gs://apart-location-inference-f196f-asia-southeast");
+const europeStorage = firebase
+  .app()
+  .storage("gs://apart-location-inference-f196f-eu");
 
 const auth = firebase.auth();
 const firestore = firebase.firestore();
 
-export { auth, firestore, storage, asiaStorage };
+export { auth, firestore, americaStorage, asiaStorage, europeStorage };

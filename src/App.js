@@ -54,7 +54,7 @@ function App() {
           <>
             <Login onUserSignedIn={onUserSignedIn} />
             <p>
-              Don't have an account?
+              {"Don't have an account? "}
               <button onClick={() => setHasAccount(false)}>Sign Up</button>
             </p>
           </>
@@ -62,7 +62,7 @@ function App() {
           <>
             <SignUp onUserSignedIn={onUserSignedIn} />
             <p>
-              Already have an account?
+              {"Already have an account? "}
               <button onClick={() => setHasAccount(true)}>Log In</button>
             </p>
           </>

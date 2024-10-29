@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MapComponent from "../components/MapComponent";
-import { auth, firestore, storage } from "../firebase/firebase";
+import {
+  auth,
+  firestore,
+  americaStorage,
+  asiaStorage,
+  europeStorage,
+} from "../firebase/firebase";
 import firebase from "firebase/compat/app";
 import {
   AppBar,
@@ -20,6 +26,7 @@ function Annotation({ user }) {
   // ################ STATE VARS ################
   // page state
   const [isLoading, setIsLoading] = useState(true);
+
   // image state
   const [imgsData, setImgsData] = useState([]);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
@@ -32,10 +39,11 @@ function Annotation({ user }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
 
-  // user state over time
+  // user state general
   const [totalDistance, setTotalDistance] = useState(0);
   const [guessCount, setGuessCount] = useState(0);
   const [averageDistance, setAverageDistance] = useState(0);
+  const [region, setRegion] = useState("");
 
   // timer
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -72,6 +80,18 @@ function Annotation({ user }) {
     return distance;
   };
 
+  // direct user to correct firebase storage bucket
+  const getStorageRef = (region) => {
+    if (region === "Asia" || region === "Oceania") {
+      return asiaStorage;
+    }
+    if (region === "Europe" || region === "Africa") {
+      return europeStorage;
+    } else {
+      return americaStorage;
+    }
+  };
+
   // Fetchs user data from firestore, include: current assigned image, toatal distance, guess count, average distance
   const fetchUserData = useCallback(async () => {
     try {
@@ -84,6 +104,9 @@ function Annotation({ user }) {
         const assignedImages = userData.assignedImages || [];
         const currentIndex = userData.currentImageIndex || 0;
         setCurrentImageIdx(currentIndex);
+
+        const userRegion = userData.region || "North America";
+        setRegion(userRegion);
 
         // Fetch image urls in batches
         const imagesData = [];
@@ -108,7 +131,9 @@ function Annotation({ user }) {
         // load current image url from firebase storage
         if (imagesData.length > 0 && currentIndex < imagesData.length) {
           const currentImageData = imagesData[currentIndex];
-          const url = await storage
+          const storageRef = getStorageRef(userRegion);
+
+          const url = await storageRef
             .ref(currentImageData.filename)
             .getDownloadURL();
           setImageURL(url);
@@ -171,14 +196,16 @@ function Annotation({ user }) {
     const loadImageURL = async () => {
       if (imgsData.length > 0 && currentImageIdx < imgsData.length) {
         const currentImageData = imgsData[currentImageIdx];
-        const url = await storage
+        const storageRef = getStorageRef(region);
+
+        const url = await storageRef
           .ref(currentImageData.filename)
           .getDownloadURL();
         setImageURL(url);
 
         if (currentImageIdx + 1 < imgsData.length) {
           const nextImageData = imgsData[currentImageIdx + 1];
-          storage.ref(nextImageData.filename).getDownloadURL();
+          storageRef.ref(nextImageData.filename).getDownloadURL();
         }
       } else {
         setImageURL("");
@@ -186,7 +213,7 @@ function Annotation({ user }) {
     };
 
     loadImageURL();
-  }, [currentImageIdx, imgsData]);
+  }, [currentImageIdx, imgsData, region]);
 
   // timer effect
   useEffect(() => {
@@ -210,7 +237,7 @@ function Annotation({ user }) {
         clearInterval(timerRef.current);
       }
     };
-  }, [currentImageIdx]);
+  }, [currentImageIdx, isSubmitted]);
 
   // ################ BUTTON HANDLERS ################
   const handleSignOut = () => {
