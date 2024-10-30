@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MapComponent from "../components/MapComponent";
+import StreetViewComponent from "../components/StreetViewComponent";
 import {
   auth,
   firestore,
@@ -31,6 +32,7 @@ function Annotation({ user }) {
   const [imgsData, setImgsData] = useState([]);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
   const [imageURL, setImageURL] = useState("");
+  const [isStatic, setIsStatic] = useState(false);
 
   // user state for each image
   const [submittedCoords, setSubmittedCoords] = useState(null);
@@ -191,6 +193,12 @@ function Annotation({ user }) {
     fetchUserData();
   }, [fetchUserData]);
 
+  // 0.5 chance that an image will be static or a photosphere
+  useEffect(() => {
+    const randomIsStatic = Math.random() < 0.5;
+    setIsStatic(randomIsStatic);
+  }, [currentImageIdx]);
+
   // loads image using url
   useEffect(() => {
     const loadImageURL = async () => {
@@ -282,6 +290,7 @@ function Annotation({ user }) {
           timeTaken: elapsedTime,
           timestamp: new Date(),
           isSubmitted: true,
+          static: isStatic,
         },
         { merge: true }
       );
@@ -437,7 +446,7 @@ function Annotation({ user }) {
     );
   }
 
-  // const currentImageData = imgsData[currentImageIdx];
+  const currentImageData = imgsData[currentImageIdx];
 
   // Categories for checkboxes
   const categories = [
@@ -472,19 +481,31 @@ function Annotation({ user }) {
 
       <Box p={2}>
         <Typography variant="h5" gutterBottom>
-          Guess the coordinates of Image {currentImageIdx + 1} of{" "}
-          {imgsData.length}
+          {`Guess the coordinates of this `}
+          <strong>
+            {isStatic ? "static image" : "interactive photosphere"}
+          </strong>
+          {`! (${currentImageIdx + 1} of ${imgsData.length})`}
         </Typography>
 
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Paper elevation={3} style={{ padding: "10px" }}>
-              {imageURL && (
-                <img
-                  src={imageURL}
-                  alt="Guess"
-                  style={{ width: "100%", height: "auto" }}
-                />
+              {isStatic ? (
+                imageURL && (
+                  <img
+                    src={imageURL}
+                    alt="Guess"
+                    style={{ width: "100%", height: "auto" }}
+                  />
+                )
+              ) : (
+                <div style={{ width: "100%", height: "500px" }}>
+                  <StreetViewComponent
+                    lat={parseFloat(currentImageData.lat)}
+                    lng={parseFloat(currentImageData.lng)}
+                  />
+                </div>
               )}
             </Paper>
           </Grid>

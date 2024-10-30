@@ -95,10 +95,21 @@ function App() {
                 </Typography>
               </Box>
               <Box mt={4}>
-                <Typography variant="h6">User Agreement</Typography>
+                <Typography variant="h5">
+                  Instructions (please read!)
+                </Typography>
+                <Typography variant="body2">
+                  You will be shown a mix of static images and photospheres from
+                  Google Street View. The photospheres will allow you to look
+                  around the environment, while the images will not. Try to
+                  guess the location by placing a marker on the map!{" "}
+                </Typography>
                 <Typography variant="body2">
                   By signing up, you are agreeing to answer all questions to the
-                  best of your ability. Report all bugs to{" "}
+                  best of your ability.
+                </Typography>
+                <Typography variant="body2">
+                  Report any issues to{" "}
                   <Link
                     href="https://github.com/njspyx/location-inference-ui"
                     target="_blank"
