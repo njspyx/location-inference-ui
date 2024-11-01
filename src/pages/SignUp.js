@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { auth, firestore } from "../firebase/firebase";
+import { auth } from "../firebase/firebase";
 import {
   Container,
   TextField,
@@ -19,7 +19,7 @@ function SignUp({ onUserSignedIn }) {
   const [password, setPassword] = useState("");
   const [region, setRegion] = useState(""); // ask for region to determine what storage bucket to use
 
-  const totalImages = 30;
+  // const totalImages = 30;
 
   const handleSignUp = async () => {
     if (!region) {
@@ -37,43 +37,46 @@ function SignUp({ onUserSignedIn }) {
       // Send email verification
       await user.sendEmailVerification();
 
-      // retrieve and update assigned images and next image index
-      await firestore.runTransaction(async (transaction) => {
-        const settingsRef = firestore
-          .collection("settings")
-          .doc("imageAssignment");
-        const settingsDoc = await transaction.get(settingsRef);
+      // NOTE: this is old code that assigns 30 images to each user on sign-up
+      // This is useful for crowdsourcing data collection, but not necessary for this project
 
-        if (!settingsDoc.exists) {
-          throw new Error("Settings document does not exist.");
-        }
+      // // retrieve and update assigned images and next image index
+      // await firestore.runTransaction(async (transaction) => {
+      //   const settingsRef = firestore
+      //     .collection("settings")
+      //     .doc("imageAssignment");
+      //   const settingsDoc = await transaction.get(settingsRef);
 
-        const data = settingsDoc.data();
-        const totalNumberOfImages = data.totalNumberOfImages;
-        let nextImageIndex = data.nextImageIndex || 0;
+      //   if (!settingsDoc.exists) {
+      //     throw new Error("Settings document does not exist.");
+      //   }
 
-        // compute assigned images; get N next images in list and wrap around if necessary
-        const assignedImages = [];
-        for (let i = 0; i < totalImages; i++) {
-          const imageIndex = (nextImageIndex + i) % totalNumberOfImages;
-          const imageId = imageIndex.toString();
-          assignedImages.push(imageId);
-        }
+      //   const data = settingsDoc.data();
+      //   const totalNumberOfImages = data.totalNumberOfImages;
+      //   let nextImageIndex = data.nextImageIndex || 0;
 
-        // Get the next image index using settings collection
-        const newNextImageIndex =
-          (nextImageIndex + totalImages) % totalNumberOfImages;
-        transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
+      //   // compute assigned images; get N next images in list and wrap around if necessary
+      //   const assignedImages = [];
+      //   for (let i = 0; i < totalImages; i++) {
+      //     const imageIndex = (nextImageIndex + i) % totalNumberOfImages;
+      //     const imageId = imageIndex.toString();
+      //     assignedImages.push(imageId);
+      //   }
 
-        // save assigned images to user document
-        const userRef = firestore.collection("users").doc(user.uid);
-        transaction.set(userRef, {
-          email: user.email,
-          assignedImages: assignedImages,
-          currentImageIndex: 0,
-          region: region,
-        });
-      });
+      //   // Get the next image index using settings collection
+      //   const newNextImageIndex =
+      //     (nextImageIndex + totalImages) % totalNumberOfImages;
+      //   transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
+
+      //   // save assigned images to user document
+      //   const userRef = firestore.collection("users").doc(user.uid);
+      //   transaction.set(userRef, {
+      //     email: user.email,
+      //     assignedImages: assignedImages,
+      //     currentImageIndex: 0,
+      //     region: region,
+      //   });
+      // });
 
       alert(
         "A verification email has been sent to your email address. Please verify your email before logging in."

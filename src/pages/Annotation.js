@@ -28,8 +28,7 @@ function Annotation({ user }) {
   const [isLoading, setIsLoading] = useState(true);
 
   // image state
-  const [imgsData, setImgsData] = useState([]);
-  const [currentImageIdx, setCurrentImageIdx] = useState(0);
+  const [currentImageData, setCurrentImageData] = useState(null);
   const [imageURL, setImageURL] = useState("");
 
   // user state for each image
@@ -92,6 +91,46 @@ function Annotation({ user }) {
     }
   };
 
+  const getNextImage = useCallback(async () => {
+    const settingsRef = firestore.collection("settings").doc("imageAssignment");
+    const userRef = firestore.collection("users").doc(user.uid);
+
+    let newCurrentImageId = null;
+
+    await firestore.runTransaction(async (transaction) => {
+      const settingsDoc = await transaction.get(settingsRef);
+      const userDoc = await transaction.get(userRef);
+
+      if (!userDoc.exists) {
+        throw new Error("User document does not exist in Firestore.");
+      }
+
+      const data = settingsDoc.data();
+      const totalNumberOfImages = data.totalNumberOfImages;
+      let nextImageIndex = data.nextImageIndex || 0;
+
+      // Get the image ID corresponding to nextImageIndex
+      const imageId = nextImageIndex.toString();
+
+      // Update nextImageIndex
+      const newNextImageIndex = (nextImageIndex + 1) % totalNumberOfImages;
+
+      // Update settings
+      transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
+
+      // Update user with new current image and set currentImageSubmitted to false
+      transaction.update(userRef, {
+        currentImageId: imageId,
+        currentImageSubmitted: false,
+      });
+
+      // Store the new current image ID to use outside the transaction
+      newCurrentImageId = imageId;
+    });
+
+    return newCurrentImageId;
+  }, [user.uid]);
+
   // Fetchs user data from firestore, include: current assigned image, toatal distance, guess count, average distance
   const fetchUserData = useCallback(async () => {
     try {
@@ -100,93 +139,64 @@ function Annotation({ user }) {
       const userData = userDoc.data();
 
       if (userData) {
-        // get users assigned images and current image index
-        const assignedImages = userData.assignedImages || [];
-        const currentIndex = userData.currentImageIndex || 0;
-        setCurrentImageIdx(currentIndex);
-
-        const userRegion = userData.region || "North America";
-        setRegion(userRegion);
-
-        // Fetch image urls in batches
-        const imagesData = [];
-        const batchSize = 10;
-        for (let i = 0; i < assignedImages.length; i += batchSize) {
-          const batchIds = assignedImages.slice(i, i + batchSize);
-          const querySnapshot = await firestore
-            .collection("images")
-            .where(firebase.firestore.FieldPath.documentId(), "in", batchIds)
-            .get();
-          querySnapshot.forEach((doc) => {
-            imagesData.push({ id: doc.id, ...doc.data() });
-          });
-        }
-
-        // Sort imagesData to maintain order
-        imagesData.sort(
-          (a, b) => assignedImages.indexOf(a.id) - assignedImages.indexOf(b.id)
-        );
-        setImgsData(imagesData);
-
-        // load current image url from firebase storage
-        if (imagesData.length > 0 && currentIndex < imagesData.length) {
-          const currentImageData = imagesData[currentIndex];
-          const storageRef = getStorageRef(userRegion);
-
-          const url = await storageRef
-            .ref(currentImageData.filename)
-            .getDownloadURL();
-          setImageURL(url);
-
-          // to combat reloading the page after submitting, check if user alr attempted img
-          const guessDoc = await userRef
-            .collection("guesses")
-            .doc(currentImageData.id)
-            .get();
-
-          if (guessDoc.exists) {
-            const guessData = guessDoc.data();
-            if (guessData.isSubmitted) {
-              setSubmittedCoords({
-                lat: guessData.userLat,
-                lng: guessData.userLng,
-              });
-              setDistance(guessData.distance);
-              setActualCoords({
-                lat: parseFloat(currentImageData.lat),
-                lng: parseFloat(currentImageData.lng),
-              });
-              setIsSubmitted(true);
-              setSelectedCategories(guessData.categories || []);
-              setElapsedTime(guessData.timeTaken || 0);
-
-              if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-              }
-            }
-          }
-        } else {
-          // All images completed
-          setImgsData([]);
-        }
+        let currentImageId = userData.currentImageId || null;
+        let currentImageSubmitted = userData.currentImageSubmitted || false;
 
         setTotalDistance(userData.totalDistance || 0);
         setGuessCount(userData.guessCount || 0);
 
-        if (guessCount > 0) {
-          setAverageDistance(totalDistance / guessCount);
+        // Recalculate averageDistance
+        if ((userData.guessCount || 0) > 0) {
+          setAverageDistance(
+            (userData.totalDistance || 0) / userData.guessCount
+          );
         } else {
           setAverageDistance(0);
         }
-      }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching assigned images:", error);
-    }
-  }, [user.uid, totalDistance, guessCount]);
 
-  // ################ USE EFFECTS ################
+        if (!currentImageId || currentImageSubmitted) {
+          // Assign next image
+          currentImageId = await getNextImage();
+        }
+
+        // Fetch the image data
+        const imageDoc = await firestore
+          .collection("images")
+          .doc(currentImageId)
+          .get();
+        const imageData = imageDoc.data();
+        setCurrentImageData({ id: currentImageId, ...imageData });
+
+        // Load image URL
+        const storageRef = getStorageRef(userData.region || "North America");
+        const url = await storageRef.ref(imageData.filename).getDownloadURL();
+        setImageURL(url);
+
+        // Initialize other state variables
+        setIsLoading(false);
+        setIsSubmitted(false);
+        setSubmittedCoords(null);
+        setDistance(null);
+        setActualCoords(null);
+        setSelectedCategories([]);
+        setElapsedTime(0);
+
+        // Start timer
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+        timerRef.current = setInterval(() => {
+          setElapsedTime((prevTime) => prevTime + 1);
+        }, 1000);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  }, [user.uid, getNextImage]);
+
+  // ################ EFFECTS ################
+
+  // fetch user data
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
@@ -194,26 +204,18 @@ function Annotation({ user }) {
   // loads image using url
   useEffect(() => {
     const loadImageURL = async () => {
-      if (imgsData.length > 0 && currentImageIdx < imgsData.length) {
-        const currentImageData = imgsData[currentImageIdx];
-        const storageRef = getStorageRef(region);
-
+      if (currentImageData) {
+        const storageRef = getStorageRef(region || "North America");
         const url = await storageRef
           .ref(currentImageData.filename)
           .getDownloadURL();
         setImageURL(url);
-
-        if (currentImageIdx + 1 < imgsData.length) {
-          const nextImageData = imgsData[currentImageIdx + 1];
-          storageRef.ref(nextImageData.filename).getDownloadURL();
-        }
       } else {
         setImageURL("");
       }
     };
-
     loadImageURL();
-  }, [currentImageIdx, imgsData, region]);
+  }, [currentImageData, region]);
 
   // timer effect
   useEffect(() => {
@@ -237,7 +239,7 @@ function Annotation({ user }) {
         clearInterval(timerRef.current);
       }
     };
-  }, [currentImageIdx, isSubmitted]);
+  }, [currentImageData, isSubmitted]);
 
   // ################ BUTTON HANDLERS ################
   const handleSignOut = () => {
@@ -257,7 +259,6 @@ function Annotation({ user }) {
     }
 
     // Calculate distance
-    const currentImageData = imgsData[currentImageIdx];
     const actualLat = parseFloat(currentImageData.lat);
     const actualLng = parseFloat(currentImageData.lng);
     const userLat = submittedCoords.lat;
@@ -268,9 +269,9 @@ function Annotation({ user }) {
 
     setIsSubmitted(true);
 
-    // Save users submission to firestore
+    // Save user's submission to Firestore
     const userRef = firestore.collection("users").doc(user.uid);
-    const currentImageId = imgsData[currentImageIdx].id;
+    const currentImageId = currentImageData.id;
 
     try {
       await userRef.collection("guesses").doc(currentImageId).set(
@@ -286,12 +287,12 @@ function Annotation({ user }) {
         { merge: true }
       );
 
-      await userRef.set(
-        {
-          lastSubmittedImageIndex: currentImageIdx,
-        },
-        { merge: true }
-      );
+      // Update currentImageSubmitted to true
+      await userRef.update({
+        currentImageSubmitted: true,
+      });
+
+      setIsSubmitted(true);
     } catch (error) {
       console.error("Error saving submission data:", error);
     }
@@ -303,14 +304,11 @@ function Annotation({ user }) {
       return;
     }
 
-    // fetch information
-    const currentImageData = imgsData[currentImageIdx];
-
     const userRef = firestore.collection("users").doc(user.uid);
     const currentImageId = currentImageData.id;
 
     try {
-      // update users submission data with categories
+      // Update user's submission data with categories
       await userRef.collection("guesses").doc(currentImageId).set(
         {
           categories: selectedCategories,
@@ -327,29 +325,40 @@ function Annotation({ user }) {
         { merge: true }
       );
 
-      // Fetch updated user data to update average distance
-      await fetchUserData();
+      // Update local state variables
+      const newTotalDistance = totalDistance + distance;
+      const newGuessCount = guessCount + 1;
+      const newAverageDistance = newTotalDistance / newGuessCount;
 
-      // Move to next image
-      const nextIndex = currentImageIdx + 1;
+      setTotalDistance(newTotalDistance);
+      setGuessCount(newGuessCount);
+      setAverageDistance(newAverageDistance);
 
-      // Update user's currentImageIndex in Firestore
-      await userRef.update({
-        currentImageIndex: nextIndex,
-      });
+      // Assign next image
+      const newCurrentImageId = await getNextImage();
 
-      setCurrentImageIdx(nextIndex);
+      // Fetch the new image data
+      const imageDoc = await firestore
+        .collection("images")
+        .doc(newCurrentImageId)
+        .get();
+      const imageData = imageDoc.data();
+      setCurrentImageData({ id: newCurrentImageId, ...imageData });
+
+      // Load the image URL
+      const storageRef = getStorageRef(region || "North America");
+      const url = await storageRef.ref(imageData.filename).getDownloadURL();
+      setImageURL(url);
 
       // Reset state
       setIsSubmitted(false);
       setSubmittedCoords(null);
       setDistance(null);
       setActualCoords(null);
-      setIsSubmitted(false);
       setSelectedCategories([]);
       setElapsedTime(0);
 
-      // Reset timer
+      // Restart timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -426,7 +435,7 @@ function Annotation({ user }) {
     return <div>Loading your assigned images, please wait...</div>;
   }
 
-  if (currentImageIdx >= imgsData.length) {
+  if (!currentImageData) {
     return (
       <div>
         <h2>No more images! You have completed the task.</h2>
@@ -436,8 +445,6 @@ function Annotation({ user }) {
       </div>
     );
   }
-
-  // const currentImageData = imgsData[currentImageIdx];
 
   // Categories for checkboxes
   const categories = [
@@ -472,8 +479,7 @@ function Annotation({ user }) {
 
       <Box p={2}>
         <Typography variant="h5" gutterBottom>
-          Guess the coordinates of Image {currentImageIdx + 1} of{" "}
-          {imgsData.length}
+          Guess the coordinates of Image {guessCount + 1}
         </Typography>
 
         <Grid container spacing={2}>
