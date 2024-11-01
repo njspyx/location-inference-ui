@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { auth } from "../firebase/firebase";
+import { auth, firestore } from "../firebase/firebase";
 import {
   Container,
   TextField,
@@ -40,7 +40,7 @@ function SignUp({ onUserSignedIn }) {
       // NOTE: this is old code that assigns 30 images to each user on sign-up
       // This is useful for crowdsourcing data collection, but not necessary for this project
 
-      // // retrieve and update assigned images and next image index
+      // retrieve and update assigned images and next image index
       // await firestore.runTransaction(async (transaction) => {
       //   const settingsRef = firestore
       //     .collection("settings")
@@ -68,15 +68,40 @@ function SignUp({ onUserSignedIn }) {
       //     (nextImageIndex + totalImages) % totalNumberOfImages;
       //   transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
 
-      //   // save assigned images to user document
-      //   const userRef = firestore.collection("users").doc(user.uid);
-      //   transaction.set(userRef, {
-      //     email: user.email,
-      //     assignedImages: assignedImages,
-      //     currentImageIndex: 0,
-      //     region: region,
-      //   });
+      // save assigned images to user document
+
       // });
+      // set email and region for user in firestore
+      // Assign initial currentImageId and update nextImageIndex
+      await firestore.runTransaction(async (transaction) => {
+        const settingsRef = firestore
+          .collection("settings")
+          .doc("imageAssignment");
+        const userRef = firestore.collection("users").doc(user.uid);
+        const settingsDoc = await transaction.get(settingsRef);
+
+        if (!settingsDoc.exists) {
+          throw new Error("Settings document does not exist.");
+        }
+
+        const data = settingsDoc.data();
+        const totalNumberOfImages = data.totalNumberOfImages;
+        let nextImageIndex = data.nextImageIndex || 0;
+
+        // Get the image ID corresponding to nextImageIndex
+        const imageId = nextImageIndex.toString();
+
+        // Update nextImageIndex
+        const newNextImageIndex = (nextImageIndex + 1) % totalNumberOfImages;
+        transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
+
+        // Create user document with initial data
+        transaction.set(userRef, {
+          email: email,
+          region: region,
+          currentImageId: imageId,
+        });
+      });
 
       alert(
         "A verification email has been sent to your email address. Please verify your email before logging in."

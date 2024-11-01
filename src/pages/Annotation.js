@@ -93,17 +93,11 @@ function Annotation({ user }) {
 
   const getNextImage = useCallback(async () => {
     const settingsRef = firestore.collection("settings").doc("imageAssignment");
-    const userRef = firestore.collection("users").doc(user.uid);
 
     let newCurrentImageId = null;
 
     await firestore.runTransaction(async (transaction) => {
       const settingsDoc = await transaction.get(settingsRef);
-      const userDoc = await transaction.get(userRef);
-
-      if (!userDoc.exists) {
-        throw new Error("User document does not exist in Firestore.");
-      }
 
       const data = settingsDoc.data();
       const totalNumberOfImages = data.totalNumberOfImages;
@@ -114,24 +108,16 @@ function Annotation({ user }) {
 
       // Update nextImageIndex
       const newNextImageIndex = (nextImageIndex + 1) % totalNumberOfImages;
-
-      // Update settings
       transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
-
-      // Update user with new current image and set currentImageSubmitted to false
-      transaction.update(userRef, {
-        currentImageId: imageId,
-        currentImageSubmitted: false,
-      });
 
       // Store the new current image ID to use outside the transaction
       newCurrentImageId = imageId;
     });
 
     return newCurrentImageId;
-  }, [user.uid]);
+  }, []);
 
-  // Fetchs user data from firestore, include: current assigned image, toatal distance, guess count, average distance
+  // Fetchs user data from firestore, include: current assigned image, total distance, guess count, average distance
   const fetchUserData = useCallback(async () => {
     try {
       const userRef = firestore.collection("users").doc(user.uid);
@@ -140,7 +126,6 @@ function Annotation({ user }) {
 
       if (userData) {
         let currentImageId = userData.currentImageId || null;
-        let currentImageSubmitted = userData.currentImageSubmitted || false;
 
         setTotalDistance(userData.totalDistance || 0);
         setGuessCount(userData.guessCount || 0);
@@ -154,45 +139,86 @@ function Annotation({ user }) {
           setAverageDistance(0);
         }
 
-        if (!currentImageId || currentImageSubmitted) {
-          // Assign next image
-          currentImageId = await getNextImage();
+        let guessData = null;
+
+        if (currentImageId) {
+          // Fetch the guess data for currentImageId
+          const guessDoc = await userRef
+            .collection("guesses")
+            .doc(currentImageId)
+            .get();
+          guessData = guessDoc.exists ? guessDoc.data() : null;
         }
 
-        // Fetch the image data
-        const imageDoc = await firestore
-          .collection("images")
-          .doc(currentImageId)
-          .get();
-        const imageData = imageDoc.data();
-        setCurrentImageData({ id: currentImageId, ...imageData });
+        if (guessData && guessData.isFinalized === false) {
+          // User has an unfinalized submission, set state accordingly
 
-        // Load image URL
-        const storageRef = getStorageRef(userData.region || "North America");
-        const url = await storageRef.ref(imageData.filename).getDownloadURL();
-        setImageURL(url);
+          // Fetch the image data
+          const imageDoc = await firestore
+            .collection("images")
+            .doc(currentImageId)
+            .get();
+          const imageData = imageDoc.data();
+          setCurrentImageData({ id: currentImageId, ...imageData });
 
-        // Initialize other state variables
+          // Load image URL
+          const storageRef = getStorageRef(userData.region || "North America");
+          const url = await storageRef.ref(imageData.filename).getDownloadURL();
+          setImageURL(url);
+
+          setIsSubmitted(true);
+          setSubmittedCoords({
+            lat: guessData.userLat,
+            lng: guessData.userLng,
+          });
+          setDistance(guessData.distance);
+          setActualCoords({
+            lat: parseFloat(imageData.lat),
+            lng: parseFloat(imageData.lng),
+          });
+          setElapsedTime(guessData.timeTaken || 0);
+          setSelectedCategories(guessData.categories || []);
+
+          // Do not start timer, since the submission is done
+        } else {
+          // User needs to start or continue guessing the current image
+
+          // Fetch the image data
+          const imageDoc = await firestore
+            .collection("images")
+            .doc(currentImageId)
+            .get();
+          const imageData = imageDoc.data();
+          setCurrentImageData({ id: currentImageId, ...imageData });
+
+          // Load image URL
+          const storageRef = getStorageRef(userData.region || "North America");
+          const url = await storageRef.ref(imageData.filename).getDownloadURL();
+          setImageURL(url);
+
+          // Reset state
+          setIsSubmitted(false);
+          setSubmittedCoords(null);
+          setDistance(null);
+          setActualCoords(null);
+          setSelectedCategories([]);
+          setElapsedTime(0);
+
+          // Start timer
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
+          timerRef.current = setInterval(() => {
+            setElapsedTime((prevTime) => prevTime + 1);
+          }, 1000);
+        }
+
         setIsLoading(false);
-        setIsSubmitted(false);
-        setSubmittedCoords(null);
-        setDistance(null);
-        setActualCoords(null);
-        setSelectedCategories([]);
-        setElapsedTime(0);
-
-        // Start timer
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
-        timerRef.current = setInterval(() => {
-          setElapsedTime((prevTime) => prevTime + 1);
-        }, 1000);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
-  }, [user.uid, getNextImage]);
+  }, [user.uid]);
 
   // ################ EFFECTS ################
 
@@ -246,6 +272,7 @@ function Annotation({ user }) {
     auth.signOut();
   };
 
+  // Modified handleSubmit function
   const handleSubmit = async () => {
     if (!submittedCoords) {
       alert("Please select a location on the map first!");
@@ -269,7 +296,7 @@ function Annotation({ user }) {
 
     setIsSubmitted(true);
 
-    // Save user's submission to Firestore
+    // Save user's submission to Firestore with isFinalized: false
     const userRef = firestore.collection("users").doc(user.uid);
     const currentImageId = currentImageData.id;
 
@@ -283,14 +310,12 @@ function Annotation({ user }) {
           timeTaken: elapsedTime,
           timestamp: new Date(),
           isSubmitted: true,
+          isFinalized: false, // Mark as unfinalized
         },
         { merge: true }
       );
 
-      // Update currentImageSubmitted to true
-      await userRef.update({
-        currentImageSubmitted: true,
-      });
+      // Removed currentImageSubmitted update
 
       setIsSubmitted(true);
     } catch (error) {
@@ -308,10 +333,11 @@ function Annotation({ user }) {
     const currentImageId = currentImageData.id;
 
     try {
-      // Update user's submission data with categories
+      // Update user's submission data with categories and set isFinalized to true
       await userRef.collection("guesses").doc(currentImageId).set(
         {
           categories: selectedCategories,
+          isFinalized: true, // Mark as finalized
         },
         { merge: true }
       );
@@ -325,17 +351,23 @@ function Annotation({ user }) {
         { merge: true }
       );
 
-      // Update local state variables
+      // Compute new totalDistance and guessCount
       const newTotalDistance = totalDistance + distance;
       const newGuessCount = guessCount + 1;
       const newAverageDistance = newTotalDistance / newGuessCount;
 
+      // Update local state variables
       setTotalDistance(newTotalDistance);
       setGuessCount(newGuessCount);
       setAverageDistance(newAverageDistance);
 
       // Assign next image
       const newCurrentImageId = await getNextImage();
+
+      // Update user's currentImageId
+      await userRef.update({
+        currentImageId: newCurrentImageId,
+      });
 
       // Fetch the new image data
       const imageDoc = await firestore

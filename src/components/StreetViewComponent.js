@@ -36,12 +36,12 @@ function StreetViewComponent({ lat, lng }) {
       });
 
       // Reset zoom level if it changes
-      const initialZoom = panorama.getZoom();
-      panorama.addListener("zoom_changed", () => {
-        if (panorama.getZoom() !== initialZoom) {
-          panorama.setZoom(initialZoom);
-        }
-      });
+      // const initialZoom = panorama.getZoom();
+      // panorama.addListener("zoom_changed", () => {
+      //   if (panorama.getZoom() !== initialZoom) {
+      //     panorama.setZoom(initialZoom);
+      //   }
+      // });
     }
 
     return () => {

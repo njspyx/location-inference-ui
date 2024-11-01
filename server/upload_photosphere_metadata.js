@@ -14,7 +14,9 @@ const firestore = admin.firestore();
 const uploadData = async () => {
   const batch = firestore.batch();
   data.forEach((doc, index) => {
-    const docRef = firestore.collection("photosphere").doc(index.toString()); // Set doc ID to index as string
+    const docRef = firestore
+      .collection("photospheres")
+      .doc("p_" + index.toString()); // Set doc ID to index as string
     batch.set(docRef, doc);
   });
 
@@ -29,7 +31,7 @@ const uploadData = async () => {
 
 // delete current images collection
 firestore
-  .collection("photosphere")
+  .collection("photospheres")
   .get()
   .then((querySnapshot) => {
     querySnapshot.forEach((doc) => {
