@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MapComponent from "../components/MapComponent";
+import StreetViewComponent from "../components/StreetViewComponent";
 import {
   auth,
   firestore,
@@ -19,32 +20,44 @@ import {
   Grid,
   Paper,
   Box,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
+import InfoIcon from "@mui/icons-material/Info";
 
 function Annotation({ user }) {
-  // ################ STATE VARS ################
-  // page state
+  // ################ STATE VARIABLES ################
+  // Page state
   const [isLoading, setIsLoading] = useState(true);
 
-  // image state
+  // Image state
   const [currentImageData, setCurrentImageData] = useState(null);
   const [imageURL, setImageURL] = useState("");
 
-  // user state for each image
+  // User state for each image
   const [submittedCoords, setSubmittedCoords] = useState(null);
   const [distance, setDistance] = useState(null);
   const [actualCoords, setActualCoords] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
 
-  // user state general
+  // User state general
   const [totalDistance, setTotalDistance] = useState(0);
   const [guessCount, setGuessCount] = useState(0);
   const [averageDistance, setAverageDistance] = useState(0);
-  const [region, setRegion] = useState("");
 
-  // timer
+  // Annotation type and availability
+  const [annotationType, setAnnotationType] = useState("Static Image");
+  const [isStatic, setIsStatic] = useState(true);
+  const [staticImagesAvailable, setStaticImagesAvailable] = useState(true);
+  const [photospheresAvailable, setPhotospheresAvailable] = useState(true);
+
+  // Timer
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef(null);
 
@@ -57,8 +70,8 @@ function Annotation({ user }) {
     const seconds = (totalSeconds % 60).toString().padStart(2, "0");
     return `${minutes}:${seconds}`;
   };
+
   // Haversine formula to calculate distance between two coordinates
-  // copied from benchmark notebook
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371; // Earth's radius in kilometers
 
@@ -79,7 +92,7 @@ function Annotation({ user }) {
     return distance;
   };
 
-  // direct user to correct firebase storage bucket
+  // Direct user to correct Firebase storage bucket
   const getStorageRef = (region) => {
     if (region === "Asia" || region === "Oceania") {
       return asiaStorage;
@@ -91,8 +104,54 @@ function Annotation({ user }) {
     }
   };
 
-  const getNextImage = useCallback(async () => {
-    const settingsRef = firestore.collection("settings").doc("imageAssignment");
+  // Function to update availability
+  const updateAvailability = useCallback(async () => {
+    try {
+      const imageAssignmentRef = firestore
+        .collection("settings")
+        .doc("imageAssignment");
+      const photosphereAssignmentRef = firestore
+        .collection("settings")
+        .doc("photosphereAssignment");
+
+      const [imageAssignmentDoc, photosphereAssignmentDoc] = await Promise.all([
+        imageAssignmentRef.get(),
+        photosphereAssignmentRef.get(),
+      ]);
+
+      const imageAssignmentData = imageAssignmentDoc.data();
+      const photosphereAssignmentData = photosphereAssignmentDoc.data();
+
+      const staticAvailable =
+        imageAssignmentData.nextImageIndex <
+        imageAssignmentData.totalNumberOfImages;
+      const photospheresAvailable =
+        photosphereAssignmentData.nextImageIndex <
+        photosphereAssignmentData.totalNumberOfImages;
+
+      setStaticImagesAvailable(staticAvailable);
+      setPhotospheresAvailable(photospheresAvailable);
+
+      if (!staticAvailable && photospheresAvailable) {
+        setAnnotationType("Photosphere");
+      } else if (!photospheresAvailable && staticAvailable) {
+        setAnnotationType("Static Image");
+      } else if (!staticAvailable && !photospheresAvailable) {
+        alert("Annotation complete! No locations left.");
+        setCurrentImageData(null);
+      }
+    } catch (error) {
+      console.error("Error checking availability:", error);
+    }
+  }, []);
+
+  const getNextImage = useCallback(async (isStatic) => {
+    const settingsCollection = isStatic
+      ? "imageAssignment"
+      : "photosphereAssignment";
+    const settingsRef = firestore
+      .collection("settings")
+      .doc(settingsCollection);
 
     let newCurrentImageId = null;
 
@@ -103,11 +162,19 @@ function Annotation({ user }) {
       const totalNumberOfImages = data.totalNumberOfImages;
       let nextImageIndex = data.nextImageIndex || 0;
 
+      if (nextImageIndex >= totalNumberOfImages) {
+        // No more images left
+        newCurrentImageId = null;
+        return;
+      }
+
       // Get the image ID corresponding to nextImageIndex
-      const imageId = nextImageIndex.toString();
+      const imageId = isStatic
+        ? nextImageIndex.toString()
+        : `p_${nextImageIndex}`;
 
       // Update nextImageIndex
-      const newNextImageIndex = (nextImageIndex + 1) % totalNumberOfImages;
+      const newNextImageIndex = nextImageIndex + 1;
       transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
 
       // Store the new current image ID to use outside the transaction
@@ -117,7 +184,7 @@ function Annotation({ user }) {
     return newCurrentImageId;
   }, []);
 
-  // Fetchs user data from firestore, include: current assigned image, total distance, guess count, average distance
+  // Fetch user data from Firestore
   const fetchUserData = useCallback(async () => {
     try {
       const userRef = firestore.collection("users").doc(user.uid);
@@ -126,6 +193,9 @@ function Annotation({ user }) {
 
       if (userData) {
         let currentImageId = userData.currentImageId || null;
+        const isStatic =
+          userData.isStatic !== undefined ? userData.isStatic : true;
+        setIsStatic(isStatic);
 
         setTotalDistance(userData.totalDistance || 0);
         setGuessCount(userData.guessCount || 0);
@@ -154,17 +224,26 @@ function Annotation({ user }) {
           // User has an unfinalized submission, set state accordingly
 
           // Fetch the image data
+          const collectionName = isStatic ? "images" : "photospheres";
           const imageDoc = await firestore
-            .collection("images")
+            .collection(collectionName)
             .doc(currentImageId)
             .get();
           const imageData = imageDoc.data();
           setCurrentImageData({ id: currentImageId, ...imageData });
 
-          // Load image URL
-          const storageRef = getStorageRef(userData.region || "North America");
-          const url = await storageRef.ref(imageData.filename).getDownloadURL();
-          setImageURL(url);
+          // Load image URL or set for photosphere
+          if (isStatic) {
+            const storageRef = getStorageRef(
+              userData.region || "North America"
+            );
+            const url = await storageRef
+              .ref(imageData.filename)
+              .getDownloadURL();
+            setImageURL(url);
+          } else {
+            setImageURL(null);
+          }
 
           setIsSubmitted(true);
           setSubmittedCoords({
@@ -184,17 +263,26 @@ function Annotation({ user }) {
           // User needs to start or continue guessing the current image
 
           // Fetch the image data
+          const collectionName = isStatic ? "images" : "photospheres";
           const imageDoc = await firestore
-            .collection("images")
+            .collection(collectionName)
             .doc(currentImageId)
             .get();
           const imageData = imageDoc.data();
           setCurrentImageData({ id: currentImageId, ...imageData });
 
-          // Load image URL
-          const storageRef = getStorageRef(userData.region || "North America");
-          const url = await storageRef.ref(imageData.filename).getDownloadURL();
-          setImageURL(url);
+          // Load image URL or set for photosphere
+          if (isStatic) {
+            const storageRef = getStorageRef(
+              userData.region || "North America"
+            );
+            const url = await storageRef
+              .ref(imageData.filename)
+              .getDownloadURL();
+            setImageURL(url);
+          } else {
+            setImageURL(null);
+          }
 
           // Reset state
           setIsSubmitted(false);
@@ -222,28 +310,31 @@ function Annotation({ user }) {
 
   // ################ EFFECTS ################
 
-  // fetch user data
+  // Fetch user data
   useEffect(() => {
+    updateAvailability();
     fetchUserData();
-  }, [fetchUserData]);
+  }, [fetchUserData, updateAvailability]);
 
-  // loads image using url
+  // Load image using URL
   useEffect(() => {
     const loadImageURL = async () => {
-      if (currentImageData) {
-        const storageRef = getStorageRef(region || "North America");
+      if (currentImageData && isStatic) {
+        const storageRef = getStorageRef(
+          currentImageData.region || "North America"
+        );
         const url = await storageRef
           .ref(currentImageData.filename)
           .getDownloadURL();
         setImageURL(url);
       } else {
-        setImageURL("");
+        setImageURL(null);
       }
     };
     loadImageURL();
-  }, [currentImageData, region]);
+  }, [currentImageData, isStatic]);
 
-  // timer effect
+  // Timer effect
   useEffect(() => {
     if (isSubmitted) {
       return;
@@ -259,7 +350,7 @@ function Annotation({ user }) {
       setElapsedTime((prevTime) => prevTime + 1);
     }, 1000);
 
-    // reset when image changes
+    // Reset when image changes
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -270,6 +361,111 @@ function Annotation({ user }) {
   // ################ BUTTON HANDLERS ################
   const handleSignOut = () => {
     auth.signOut();
+  };
+
+  // Modified handleAnnotationTypeChange function
+  const handleAnnotationTypeChange = async (event) => {
+    const selectedType = event.target.value;
+
+    // If the annotation type hasn't changed, do nothing
+    if (selectedType === annotationType) {
+      return;
+    }
+
+    // Unassign current image if necessary
+    if (currentImageData && !isSubmitted) {
+      // Decrement the nextImageIndex in the settings for the previous annotation type
+      const settingsCollection = isStatic
+        ? "imageAssignment"
+        : "photosphereAssignment";
+      const settingsRef = firestore
+        .collection("settings")
+        .doc(settingsCollection);
+
+      await firestore.runTransaction(async (transaction) => {
+        const settingsDoc = await transaction.get(settingsRef);
+        const data = settingsDoc.data();
+        let nextImageIndex = data.nextImageIndex || 0;
+
+        // Decrement nextImageIndex by 1, but ensure it doesn't go below 0
+        const newNextImageIndex = Math.max(nextImageIndex - 1, 0);
+        transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
+      });
+    }
+
+    // Update the annotation type
+    setAnnotationType(selectedType);
+    const isStaticNext = selectedType === "Static Image";
+    setIsStatic(isStaticNext);
+
+    // Assign new image
+    const newCurrentImageId = await getNextImage(isStaticNext);
+
+    if (!newCurrentImageId) {
+      // No more images of this type
+      if (isStaticNext) {
+        setStaticImagesAvailable(false);
+      } else {
+        setPhotospheresAvailable(false);
+      }
+
+      // Update availability
+      await updateAvailability();
+
+      if (!staticImagesAvailable && !photospheresAvailable) {
+        alert("Annotation complete! No locations left.");
+        setCurrentImageData(null);
+        return;
+      } else {
+        const otherType = isStaticNext ? "Photosphere" : "Static Image";
+        setAnnotationType(otherType);
+        alert(
+          `No more ${selectedType.toLowerCase()}s available. Switching to ${otherType.toLowerCase()}s.`
+        );
+        return;
+      }
+    }
+
+    // Update user's currentImageId and isStatic
+    const userRef = firestore.collection("users").doc(user.uid);
+    await userRef.update({
+      currentImageId: newCurrentImageId,
+      isStatic: isStaticNext,
+    });
+
+    // Fetch the new image data
+    const collectionName = isStaticNext ? "images" : "photospheres";
+    const imageDoc = await firestore
+      .collection(collectionName)
+      .doc(newCurrentImageId)
+      .get();
+    const imageData = imageDoc.data();
+    setCurrentImageData({ id: newCurrentImageId, ...imageData });
+
+    // Load the image URL or set the component for photosphere
+    if (isStaticNext) {
+      const storageRef = getStorageRef(imageData.region || "North America");
+      const url = await storageRef.ref(imageData.filename).getDownloadURL();
+      setImageURL(url);
+    } else {
+      setImageURL(null);
+    }
+
+    // Reset state
+    setIsSubmitted(false);
+    setSubmittedCoords(null);
+    setDistance(null);
+    setActualCoords(null);
+    setSelectedCategories([]);
+    setElapsedTime(0);
+
+    // Restart timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    timerRef.current = setInterval(() => {
+      setElapsedTime((prevTime) => prevTime + 1);
+    }, 1000);
   };
 
   // Modified handleSubmit function
@@ -311,11 +507,10 @@ function Annotation({ user }) {
           timestamp: new Date(),
           isSubmitted: true,
           isFinalized: false, // Mark as unfinalized
+          isStatic: isStatic,
         },
         { merge: true }
       );
-
-      // Removed currentImageSubmitted update
 
       setIsSubmitted(true);
     } catch (error) {
@@ -323,6 +518,7 @@ function Annotation({ user }) {
     }
   };
 
+  // Modified handleNext function
   const handleNext = async () => {
     if (selectedCategories.length === 0) {
       alert("Please select at least one category at the bottom.");
@@ -361,26 +557,63 @@ function Annotation({ user }) {
       setGuessCount(newGuessCount);
       setAverageDistance(newAverageDistance);
 
-      // Assign next image
-      const newCurrentImageId = await getNextImage();
+      // Determine if the next item is static or not based on annotationType
+      const isStaticNext = annotationType === "Static Image";
 
-      // Update user's currentImageId
+      // Assign next image
+      const newCurrentImageId = await getNextImage(isStaticNext);
+
+      if (!newCurrentImageId) {
+        // No more images left
+        if (isStaticNext) {
+          setStaticImagesAvailable(false);
+        } else {
+          setPhotospheresAvailable(false);
+        }
+
+        // Update availability
+        await updateAvailability();
+
+        if (!staticImagesAvailable && !photospheresAvailable) {
+          alert("Annotation complete! No locations left.");
+          setCurrentImageData(null);
+          return;
+        } else {
+          const otherType = isStaticNext ? "Photosphere" : "Static Image";
+          setAnnotationType(otherType);
+          alert(
+            `No more ${annotationType.toLowerCase()}s available. Switching to ${otherType.toLowerCase()}s.`
+          );
+          return;
+        }
+      }
+
+      // Update user's currentImageId and isStatic
       await userRef.update({
         currentImageId: newCurrentImageId,
+        isStatic: isStaticNext,
       });
 
       // Fetch the new image data
+      const collectionName = isStaticNext ? "images" : "photospheres";
       const imageDoc = await firestore
-        .collection("images")
+        .collection(collectionName)
         .doc(newCurrentImageId)
         .get();
       const imageData = imageDoc.data();
       setCurrentImageData({ id: newCurrentImageId, ...imageData });
 
-      // Load the image URL
-      const storageRef = getStorageRef(region || "North America");
-      const url = await storageRef.ref(imageData.filename).getDownloadURL();
-      setImageURL(url);
+      // Load the image URL or set the component for photosphere
+      if (isStaticNext) {
+        const storageRef = getStorageRef(imageData.region || "North America");
+        const url = await storageRef.ref(imageData.filename).getDownloadURL();
+        setImageURL(url);
+      } else {
+        setImageURL(null);
+      }
+
+      // Update isStatic state
+      setIsStatic(isStaticNext);
 
       // Reset state
       setIsSubmitted(false);
@@ -402,56 +635,7 @@ function Annotation({ user }) {
     }
   };
 
-  const handleRequestMoreImages = async () => {
-    try {
-      await firestore.runTransaction(async (transaction) => {
-        const settingsRef = firestore
-          .collection("settings")
-          .doc("imageAssignment");
-        const settingsDoc = await transaction.get(settingsRef);
-
-        if (!settingsDoc.exists) {
-          throw new Error("Settings document does not exist.");
-        }
-
-        const data = settingsDoc.data();
-        const totalNumberOfImages = data.totalNumberOfImages;
-        let nextImageIndex = data.nextImageIndex || 0;
-
-        // Compute new assigned images
-        const newAssignedImages = [];
-        for (let i = 0; i < 30; i++) {
-          const imageIndex = (nextImageIndex + i) % totalNumberOfImages;
-          const imageId = imageIndex.toString();
-          newAssignedImages.push(imageId);
-        }
-
-        // Update nextImageIndex
-        const newNextImageIndex = (nextImageIndex + 30) % totalNumberOfImages;
-        transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
-
-        // Update user's assignedImages
-        const userRef = firestore.collection("users").doc(user.uid);
-        transaction.update(userRef, {
-          assignedImages: firebase.firestore.FieldValue.arrayUnion(
-            ...newAssignedImages
-          ),
-        });
-      });
-
-      // After successfully adding new images, fetch updated data
-      await fetchUserData();
-
-      alert("30 more images have been assigned to you.");
-    } catch (error) {
-      console.error("Error requesting more images:", error);
-      alert(
-        "An error occurred while requesting more images. Please try again."
-      );
-    }
-  };
-
-  // handler for category checkboxes
+  // Handler for category checkboxes
   const handleCategoryChange = (event) => {
     const { value, checked } = event.target;
     if (checked) {
@@ -471,24 +655,65 @@ function Annotation({ user }) {
     return (
       <div>
         <h2>No more images! You have completed the task.</h2>
-        <button onClick={handleRequestMoreImages}>
-          Request 30 More Images
-        </button>
       </div>
     );
   }
 
-  // Categories for checkboxes
+  // Categories with descriptions
   const categories = [
-    "Climate",
-    "Architecture",
-    "Street Signs",
-    "Language",
-    "Landmark",
-    "Vegetation",
-    "Vehicle",
-    "Urban Layout",
-    "Cultural Element",
+    {
+      name: "Road and infrastructure",
+      description:
+        "Details related to roads, infrastructure on roads, pavements, or sidewalks.",
+    },
+    {
+      name: "Urban layout and elements",
+      description:
+        "Features related to street layout, building density, urban planning, etc.",
+    },
+    {
+      name: "Signage",
+      description: "Traffic signs, shop signs, billboards, etc.",
+    },
+    {
+      name: "Architecture",
+      description:
+        "Buildings, structures, materials, architectural styles, etc.",
+    },
+    {
+      name: "Traffic and vehicles",
+      description:
+        "Types of vehicles, license plates, car models, traffic patterns, utility vehicles, etc.",
+    },
+    {
+      name: "Vegetation",
+      description: "Plants, trees, etc.",
+    },
+    {
+      name: "Environment and climate",
+      description: "Sky, weather, landscape features, terrain, etc.",
+    },
+    {
+      name: "Lighting and shadows",
+      description: "Used to guess hemisphere, time of day, season, etc.",
+    },
+    {
+      name: "Recognizable landmarks",
+      description: "Specific, identifiable places or structures.",
+    },
+    {
+      name: "Language",
+      description: "Text on signs, buildings, or overheard speech.",
+    },
+    {
+      name: "Other cultural elements",
+      description:
+        "Clothing, festivals, customs, etc. (not including language).",
+    },
+    {
+      name: "Other",
+      description: "Any other details that don't fit the above categories.",
+    },
   ];
 
   return (
@@ -510,19 +735,48 @@ function Annotation({ user }) {
       </AppBar>
 
       <Box p={2}>
-        <Typography variant="h5" gutterBottom>
-          Guess the coordinates of Image {guessCount + 1}
-        </Typography>
+        <Box display="flex" alignItems="center" mb={2}>
+          <Typography variant="h5">
+            #{guessCount + 1}: Guess the coordinates of the image.
+          </Typography>
+          <FormControl
+            variant="outlined"
+            style={{ marginLeft: "auto", minWidth: 150 }}
+          >
+            <InputLabel id="annotation-type-label">Annotation Type</InputLabel>
+            <Select
+              labelId="annotation-type-label"
+              id="annotation-type-select"
+              value={annotationType}
+              onChange={handleAnnotationTypeChange}
+              label="Annotation Type"
+            >
+              <MenuItem value="Static Image">Static Image</MenuItem>
+              <MenuItem value="Photosphere" disabled>
+                Photosphere
+              </MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Paper elevation={3} style={{ padding: "10px" }}>
-              {imageURL && (
-                <img
-                  src={imageURL}
-                  alt="Guess"
-                  style={{ width: "100%", height: "auto" }}
-                />
+              {isStatic ? (
+                imageURL && (
+                  <img
+                    src={imageURL}
+                    alt="Guess"
+                    style={{ width: "100%", height: "auto" }}
+                  />
+                )
+              ) : (
+                <div style={{ width: "100%", height: "500px" }}>
+                  <StreetViewComponent
+                    lat={parseFloat(currentImageData.lat)}
+                    lng={parseFloat(currentImageData.lng)}
+                  />
+                </div>
               )}
             </Paper>
           </Grid>
@@ -588,21 +842,39 @@ function Annotation({ user }) {
             <Box mt={3}>
               <Typography variant="h6">
                 What details from the image did you use to make your guess?
+                <Tooltip
+                  title={
+                    <React.Fragment>
+                      {categories.map((category) => (
+                        <div key={category.name}>
+                          <strong>{category.name}:</strong>{" "}
+                          {category.description}
+                        </div>
+                      ))}
+                    </React.Fragment>
+                  }
+                  placement="right"
+                  arrow
+                >
+                  <IconButton size="small">
+                    <InfoIcon />
+                  </IconButton>
+                </Tooltip>
               </Typography>
               <FormGroup>
                 <Grid container spacing={1}>
                   {categories.map((category) => (
-                    <Grid item xs={12} sm={6} md={4} key={category}>
+                    <Grid item xs={12} sm={6} md={4} key={category.name}>
                       <FormControlLabel
                         control={
                           <Checkbox
-                            value={category}
-                            checked={selectedCategories.includes(category)}
+                            value={category.name}
+                            checked={selectedCategories.includes(category.name)}
                             onChange={handleCategoryChange}
                             color="primary"
                           />
                         }
-                        label={category}
+                        label={category.name}
                       />
                     </Grid>
                   ))}

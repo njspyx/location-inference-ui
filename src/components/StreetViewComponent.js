@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { useLoadScript } from "@react-google-maps/api";
 
-function StreetViewComponent({ lat, lng }) {
+function StreetViewComponent({ lat, lng, heading }) {
   const streetViewRef = useRef(null);
 
   const { isLoaded, loadError } = useLoadScript({
@@ -16,7 +16,7 @@ function StreetViewComponent({ lat, lng }) {
         streetViewRef.current,
         {
           position: { lat, lng },
-          pov: { heading: 0, pitch: 0, zoom: 0 },
+          pov: { heading: heading, pitch: 0, zoom: 0 },
           disableDefaultUI: true,
           clickToGo: false,
           linksControl: false,
@@ -49,7 +49,7 @@ function StreetViewComponent({ lat, lng }) {
         window.google.maps.event.clearInstanceListeners(panorama);
       }
     };
-  }, [isLoaded, lat, lng]);
+  }, [isLoaded, lat, lng, heading]);
 
   if (loadError) return <div>Error loading Street View</div>;
   if (!isLoaded) return <div>Loading Street View...</div>;
