@@ -30,3 +30,5 @@ server/*-firebase-admin*.json
 # benchmark stuff
 server/coordinates.csv
 server/coordinates.json
+server/coordinates_20percent.csv
+server/coordinates_20percent.json
