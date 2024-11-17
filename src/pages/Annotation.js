@@ -518,6 +518,84 @@ function Annotation({ user }) {
     }
   };
 
+  // Modified handleSkip function
+  const handleSkip = async () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    const isStaticNext = false;
+
+    try {
+      // Assign next image
+      const newCurrentImageId = await getNextImage(isStaticNext);
+
+      if (!newCurrentImageId) {
+        // No more images left
+        setPhotospheresAvailable(false);
+
+        // Update availability
+        await updateAvailability();
+
+        if (!staticImagesAvailable && !photospheresAvailable) {
+          alert("Annotation complete! No locations left.");
+          setCurrentImageData(null);
+          return;
+        } else if (staticImagesAvailable) {
+          setAnnotationType("Static Image");
+          alert("No more photospheres available. Switching to static images.");
+          return;
+        }
+      }
+
+      // Update user's currentImageId and isStatic
+      const userRef = firestore.collection("users").doc(user.uid);
+      await userRef.update({
+        currentImageId: newCurrentImageId,
+        isStatic: isStaticNext,
+      });
+
+      // Fetch the new image data
+      const collectionName = isStaticNext ? "images" : "photospheres";
+      const imageDoc = await firestore
+        .collection(collectionName)
+        .doc(newCurrentImageId)
+        .get();
+      const imageData = imageDoc.data();
+      setCurrentImageData({ id: newCurrentImageId, ...imageData });
+
+      // Load the image URL or set the component for photosphere
+      if (isStaticNext) {
+        const storageRef = getStorageRef(imageData.region || "North America");
+        const url = await storageRef.ref(imageData.filename).getDownloadURL();
+        setImageURL(url);
+      } else {
+        setImageURL(null);
+      }
+
+      // Update isStatic state
+      setIsStatic(isStaticNext);
+
+      // Reset state
+      setIsSubmitted(false);
+      setSubmittedCoords(null);
+      setDistance(null);
+      setActualCoords(null);
+      setSelectedCategories([]);
+      setElapsedTime(0);
+
+      // Restart timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prevTime) => prevTime + 1);
+      }, 1000);
+    } catch (error) {
+      console.error("Error skipping image:", error);
+    }
+  };
+
   // Modified handleNext function
   const handleNext = async () => {
     if (selectedCategories.length === 0) {
@@ -752,9 +830,7 @@ function Annotation({ user }) {
               label="Annotation Type"
             >
               <MenuItem value="Static Image">Static Image</MenuItem>
-              <MenuItem value="Photosphere" disabled>
-                Photosphere
-              </MenuItem>
+              <MenuItem value="Photosphere">Photosphere</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -832,6 +908,15 @@ function Annotation({ user }) {
                 >
                   Next
                 </Button>
+                {!isStatic && (
+                  <Button
+                    variant="contained"
+                    onClick={handleSkip}
+                    style={{ marginLeft: "10px" }}
+                  >
+                    Skip
+                  </Button>
+                )}
               </Box>
             </Grid>
           </Grid>
