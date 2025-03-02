@@ -17,7 +17,6 @@ import {
   Button,
   Checkbox,
   FormControlLabel,
-  FormGroup,
   Grid,
   Paper,
   Box,
@@ -29,7 +28,6 @@ import {
   IconButton,
   Chip,
   CircularProgress,
-  Divider,
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import InfoIcon from "@mui/icons-material/Info";
@@ -357,7 +355,7 @@ function Annotation({ user }) {
         clearInterval(timerRef.current);
       }
     };
-  }, [user.uid, isStatic, checkAvailability, getNextItem, getRandomItem]);
+  }, [user, isStatic, checkAvailability, getNextItem, getRandomItem]);
 
   // ################ BUTTON HANDLERS ################
 
