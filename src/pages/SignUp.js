@@ -17,9 +17,7 @@ import {
 function SignUp({ onUserSignedIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [region, setRegion] = useState(""); // ask for region to determine what storage bucket to use
-
-  // const totalImages = 30;
+  const [region, setRegion] = useState("North America"); // Default region is North America
 
   const handleSignUp = async () => {
     if (!region) {
@@ -37,70 +35,19 @@ function SignUp({ onUserSignedIn }) {
       // Send email verification
       await user.sendEmailVerification();
 
-      // NOTE: this is old code that assigns 30 images to each user on sign-up
-      // This is useful for crowdsourcing data collection, but not necessary for this project
+      // Create new user document with initial data
+      const userRef = firestore.collection("users").doc(user.uid);
 
-      // retrieve and update assigned images and next image index
-      // await firestore.runTransaction(async (transaction) => {
-      //   const settingsRef = firestore
-      //     .collection("settings")
-      //     .doc("imageAssignment");
-      //   const settingsDoc = await transaction.get(settingsRef);
-
-      //   if (!settingsDoc.exists) {
-      //     throw new Error("Settings document does not exist.");
-      //   }
-
-      //   const data = settingsDoc.data();
-      //   const totalNumberOfImages = data.totalNumberOfImages;
-      //   let nextImageIndex = data.nextImageIndex || 0;
-
-      //   // compute assigned images; get N next images in list and wrap around if necessary
-      //   const assignedImages = [];
-      //   for (let i = 0; i < totalImages; i++) {
-      //     const imageIndex = (nextImageIndex + i) % totalNumberOfImages;
-      //     const imageId = imageIndex.toString();
-      //     assignedImages.push(imageId);
-      //   }
-
-      //   // Get the next image index using settings collection
-      //   const newNextImageIndex =
-      //     (nextImageIndex + totalImages) % totalNumberOfImages;
-      //   transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
-
-      // save assigned images to user document
-
-      // });
-      // set email and region for user in firestore
-      // Assign initial currentImageId and update nextImageIndex
-      await firestore.runTransaction(async (transaction) => {
-        const settingsRef = firestore
-          .collection("settings")
-          .doc("imageAssignment");
-        const userRef = firestore.collection("users").doc(user.uid);
-        const settingsDoc = await transaction.get(settingsRef);
-
-        if (!settingsDoc.exists) {
-          throw new Error("Settings document does not exist.");
-        }
-
-        const data = settingsDoc.data();
-        const totalNumberOfImages = data.totalNumberOfImages;
-        let nextImageIndex = data.nextImageIndex || 0;
-
-        // Get the image ID corresponding to nextImageIndex
-        const imageId = nextImageIndex.toString();
-
-        // Update nextImageIndex
-        const newNextImageIndex = (nextImageIndex + 1) % totalNumberOfImages;
-        transaction.update(settingsRef, { nextImageIndex: newNextImageIndex });
-
-        // Create user document with initial data
-        transaction.set(userRef, {
-          email: email,
-          region: region,
-          currentImageId: imageId,
-        });
+      await userRef.set({
+        email: email,
+        region: region,
+        createdAt: new Date(), // Use JavaScript Date instead of serverTimestamp
+        currentImageIndex: 0, // Start with index 0 for the first image
+        currentPhotosphereIndex: 0, // Start with index 0 for the first photosphere
+        guessCount: 0,
+        totalDistance: 0,
+        gptWinCount: 0, // Number of times GPT had a better guess
+        userWinCount: 0, // Number of times user had a better guess
       });
 
       alert(
