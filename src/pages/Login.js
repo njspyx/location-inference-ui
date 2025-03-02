@@ -50,6 +50,10 @@ function Login({ onUserSignedIn }) {
     }
   };
 
+  const handleGuestLogin = () => {
+    onUserSignedIn({ isGuest: true });
+  };
+
   return (
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
@@ -92,6 +96,15 @@ function Login({ onUserSignedIn }) {
             sx={{ marginTop: 1 }}
           >
             Forgot Password?
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleGuestLogin}
+            fullWidth
+            sx={{ marginTop: 1 }}
+          >
+            Continue as Guest
           </Button>
         </Box>
       </Paper>

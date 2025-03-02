@@ -24,14 +24,19 @@ function App() {
     return unsubscribe;
   }, []);
 
-  const onUserSignedIn = () => {
-    const currentUser = auth.currentUser;
-    setUser(currentUser);
-    setEmailVerified(currentUser.emailVerified);
+  const onUserSignedIn = (userArg) => {
+    if (userArg?.isGuest) {
+      // Skip email verification, route as guest
+      setUser({ isGuest: true });
+    } else {
+      const currentUser = auth.currentUser;
+      setUser(currentUser);
+      setEmailVerified(currentUser.emailVerified);
+    }
   };
 
   if (user) {
-    if (emailVerified) {
+    if (user.isGuest || emailVerified) {
       return <Annotation user={user} />;
     } else {
       return (
