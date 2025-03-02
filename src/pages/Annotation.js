@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import "./Annotation.css"; // Import the CSS file
 import MapComponent from "../components/MapComponent";
 import StreetViewComponent from "../components/StreetViewComponent";
 import {
@@ -27,11 +28,19 @@ import {
   Tooltip,
   IconButton,
   Chip,
+  CircularProgress,
+  Divider,
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import InfoIcon from "@mui/icons-material/Info";
 import ComputerIcon from "@mui/icons-material/Computer";
 import PersonIcon from "@mui/icons-material/Person";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import PlaceIcon from "@mui/icons-material/Place";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import SportsScoreIcon from "@mui/icons-material/SportsScore";
+import CategoryIcon from "@mui/icons-material/Category";
+import StraightenIcon from "@mui/icons-material/Straighten";
 
 function Annotation({ user }) {
   // ################ STATE VARIABLES ################
@@ -353,7 +362,11 @@ function Annotation({ user }) {
   // ################ BUTTON HANDLERS ################
 
   const handleSignOut = () => {
-    auth.signOut();
+    if (user?.isGuest) {
+      window.location.href = "/login";
+    } else {
+      auth.signOut();
+    }
   };
 
   // Handle annotation type change
@@ -804,10 +817,66 @@ function Annotation({ user }) {
     },
   ];
 
+  // ################ RENDER ################
+  if (isLoading || isHoldingLoading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        flexDirection="column"
+        gap={2}
+      >
+        <CircularProgress color="primary" size={60} />
+        <Typography variant="h5">
+          Loading {isStatic ? "images" : "photospheres"}, please wait...
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Only show "No more images" if neither static nor photospheres remain
+  if (
+    !isLoading &&
+    !currentImageData &&
+    !staticImagesAvailable &&
+    !photospheresAvailable
+  ) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        flexDirection="column"
+        p={3}
+      >
+        <Paper elevation={3} sx={{ padding: 4, textAlign: "center" }}>
+          <Typography variant="h4" gutterBottom>
+            🎉 Congratulations!
+          </Typography>
+          <Typography variant="h6" gutterBottom>
+            You have completed the benchmark!
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSignOut}
+            startIcon={<LogoutIcon />}
+            sx={{ mt: 4 }}
+          >
+            Sign Out
+          </Button>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
-    <div className="root">
-      <AppBar position="static">
-        <Toolbar>
+    <div className="annotation-root">
+      <AppBar position="static" className="app-header">
+        <Toolbar className="header-content">
           <Button
             color="inherit"
             onClick={handleSignOut}
@@ -819,70 +888,108 @@ function Annotation({ user }) {
           {user?.isGuest ? (
             <Typography
               variant="h6"
-              style={{ flexGrow: 1, textAlign: "center" }}
+              className="stats-display"
+              style={{ flexGrow: 1 }}
             >
-              Guest Session: Avg Score:{" "}
-              {(guestGuessCount
-                ? guestTotalDistance / guestGuessCount
-                : 0
-              ).toFixed(2)}{" "}
-              km | Beat GPT: {guestUserWinCount} | Lost to GPT:{" "}
-              {guestGptWinCount}
+              <span className="stat-item">
+                <StraightenIcon className="stat-icon" />
+                Guest Avg:{" "}
+                {(guestGuessCount
+                  ? guestTotalDistance / guestGuessCount
+                  : 0
+                ).toFixed(2)}{" "}
+                km
+              </span>
+              <span className="stat-item">
+                <EmojiEventsIcon className="stat-icon" />
+                Beat GPT: {guestUserWinCount}
+              </span>
+              <span className="stat-item">
+                <SportsScoreIcon className="stat-icon" />
+                Lost to GPT: {guestGptWinCount}
+              </span>
             </Typography>
           ) : (
             <Typography
               variant="h6"
-              style={{ flexGrow: 1, textAlign: "center" }}
+              className="stats-display"
+              style={{ flexGrow: 1 }}
             >
-              Avg Score: {averageDistance.toFixed(2)} km | Beat GPT:{" "}
-              {userWinCount} times | Lost to GPT: {gptWinCount} times
+              <span className="stat-item">
+                <StraightenIcon className="stat-icon" />
+                Avg: {averageDistance.toFixed(2)} km
+              </span>
+              <span className="stat-item">
+                <EmojiEventsIcon className="stat-icon" />
+                Beat GPT: {userWinCount}
+              </span>
+              <span className="stat-item">
+                <SportsScoreIcon className="stat-icon" />
+                Lost to GPT: {gptWinCount}
+              </span>
             </Typography>
           )}
         </Toolbar>
       </AppBar>
 
-      <Box p={2}>
-        <Box display="flex" alignItems="center" mb={2}>
-          <Typography variant="h5">
-            #{guessCount + 1}: Guess the coordinates of the image.
-          </Typography>
+      <div className="annotation-container">
+        <Box className="page-title" mt={3}>
+          {user?.isGuest ? (
+            <Typography variant="h5">
+              [Guest] Where is this location?
+            </Typography>
+          ) : (
+            <Typography variant="h5">
+              #{guessCount + 1}: Where is this location?
+            </Typography>
+          )}
+
+          <div className="countdown-timer">
+            <AccessTimeIcon className="timer-icon" />
+            {formatTime(elapsedTime)}
+          </div>
+
           <FormControl
             variant="outlined"
-            style={{ marginLeft: "auto", minWidth: 150 }}
+            className="type-selector"
             disabled={!staticImagesAvailable && !photospheresAvailable}
           >
-            <InputLabel id="annotation-type-label">Annotation Type</InputLabel>
+            <InputLabel id="annotation-type-label">View Type</InputLabel>
             <Select
               labelId="annotation-type-label"
               id="annotation-type-select"
               value={annotationType}
               onChange={handleAnnotationTypeChange}
-              label="Annotation Type"
+              label="View Type"
             >
               <MenuItem value="Static Image" disabled={!staticImagesAvailable}>
                 Static Image
               </MenuItem>
               <MenuItem value="Photosphere" disabled={!photospheresAvailable}>
-                Photosphere
+                360° Photosphere
               </MenuItem>
             </Select>
           </FormControl>
         </Box>
 
-        <Grid container spacing={2}>
+        <Grid container spacing={3} mt={1}>
           <Grid item xs={12} md={6}>
-            <Paper elevation={3} style={{ padding: "10px" }}>
+            <Paper elevation={0} className="content-card">
               {isStatic
                 ? currentImageData &&
                   imageURL && (
                     <img
                       src={imageURL}
-                      alt="Guess"
-                      style={{ width: "100%", height: "auto" }}
+                      alt="Geo Location"
+                      style={{
+                        width: "100%",
+                        height: "auto",
+                        display: "block",
+                      }}
                     />
                   )
                 : currentImageData && (
-                    <div style={{ width: "100%", height: "500px" }}>
+                    <div className="street-view-container">
                       <StreetViewComponent
                         lat={parseFloat(currentImageData.lat)}
                         lng={parseFloat(currentImageData.lng)}
@@ -894,178 +1001,209 @@ function Annotation({ user }) {
           </Grid>
 
           <Grid item xs={12} md={6} container direction="column" spacing={2}>
-            <Grid item style={{ height: "450px" }}>
-              <Paper elevation={3} style={{ height: "100%", padding: "10px" }}>
-                <MapComponent
-                  onSelectCoords={setSubmittedCoords}
-                  submittedCoords={submittedCoords}
-                  actualCoords={actualCoords}
-                  gptCoords={showGptGuess ? gptCoords : null}
-                  isSubmitted={isSubmitted}
-                />
+            <Grid item>
+              <Paper elevation={0} className="content-card">
+                <div className="map-container">
+                  <MapComponent
+                    onSelectCoords={setSubmittedCoords}
+                    submittedCoords={submittedCoords}
+                    actualCoords={actualCoords}
+                    gptCoords={showGptGuess ? gptCoords : null}
+                    isSubmitted={isSubmitted}
+                  />
+                </div>
               </Paper>
-            </Grid>{" "}
-            <Grid item mt={4}>
-              <Typography variant="body1">
-                Time: {formatTime(elapsedTime)}
-              </Typography>
-              {submittedCoords && (
-                <Typography variant="body1">
-                  Selected Coordinates: {submittedCoords.lat.toFixed(4)},{" "}
-                  {submittedCoords.lng.toFixed(4)}
-                </Typography>
-              )}
-              {distance && actualCoords && (
-                <Box mt={2}>
-                  <Typography variant="h6">
-                    Your guess was {distance.toFixed(2)} km away.
-                    {showGptGuess && gptDistance && (
-                      <span
-                        style={{
-                          marginLeft: "10px",
-                          color: distance <= gptDistance ? "green" : "red",
-                        }}
-                      >
-                        {distance <= gptDistance
-                          ? `(Beat GPT by ${(gptDistance - distance).toFixed(
-                              2
-                            )} km!)`
-                          : `(GPT was better by ${(
-                              distance - gptDistance
-                            ).toFixed(2)} km)`}
-                      </span>
-                    )}
-                  </Typography>
-                  <Typography variant="body1">
-                    Actual Coordinates: {actualCoords.lat.toFixed(4)},{" "}
-                    {actualCoords.lng.toFixed(4)}
-                  </Typography>
-                  {showGptGuess && gptCoords && (
-                    <Typography variant="body1">
-                      GPT's Guess: {gptCoords.lat.toFixed(4)},{" "}
-                      {gptCoords.lng.toFixed(4)} ({gptDistance.toFixed(2)} km
-                      away)
+            </Grid>
+
+            <Grid item>
+              <Paper elevation={0} className="content-card" sx={{ padding: 2 }}>
+                {submittedCoords && (
+                  <Box className="coords-display">
+                    <Typography
+                      variant="body1"
+                      display="flex"
+                      alignItems="center"
+                    >
+                      <PlaceIcon style={{ marginRight: 8, color: "#1a73e8" }} />
+                      Selected: {submittedCoords.lat.toFixed(4)},{" "}
+                      {submittedCoords.lng.toFixed(4)}
                     </Typography>
-                  )}
+                  </Box>
+                )}
+
+                {distance && actualCoords && (
+                  <Box className="results-container">
+                    <Typography variant="h6">
+                      Your guess was{" "}
+                      <span
+                        className={
+                          distance <= 1000 ? "result-success" : "result-error"
+                        }
+                      >
+                        {distance.toFixed(2)} km
+                      </span>{" "}
+                      away.
+                      {showGptGuess && gptDistance && (
+                        <span
+                          style={{
+                            marginLeft: "10px",
+                            color:
+                              distance <= gptDistance ? "#34a853" : "#ea4335",
+                          }}
+                        >
+                          {distance <= gptDistance
+                            ? `(Beat GPT by ${(gptDistance - distance).toFixed(
+                                2
+                              )} km!)`
+                            : `(GPT was better by ${(
+                                distance - gptDistance
+                              ).toFixed(2)} km)`}
+                        </span>
+                      )}
+                    </Typography>
+                    <Typography variant="body1">
+                      Actual Location: {actualCoords.lat.toFixed(4)},{" "}
+                      {actualCoords.lng.toFixed(4)}
+                    </Typography>
+                    {showGptGuess && gptCoords && (
+                      <Typography variant="body1">
+                        GPT's Guess: {gptCoords.lat.toFixed(4)},{" "}
+                        {gptCoords.lng.toFixed(4)} ({gptDistance.toFixed(2)} km
+                        away)
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+
+                <Box className="button-group">
+                  <Button
+                    variant="contained"
+                    className="submit-button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitted || !submittedCoords}
+                    size="large"
+                    fullWidth
+                  >
+                    Submit Guess
+                  </Button>
+                  <Button
+                    variant="contained"
+                    className="next-button"
+                    onClick={handleNext}
+                    disabled={!isSubmitted}
+                    size="large"
+                    fullWidth
+                  >
+                    Next Location
+                  </Button>
                 </Box>
-              )}
-              <Box mt={2}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSubmit}
-                  disabled={isSubmitted}
-                  className="submit-button"
-                  style={{ marginRight: "10px" }}
-                >
-                  Submit
-                </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={handleNext}
-                  disabled={!isSubmitted}
-                >
-                  Next
-                </Button>
-              </Box>
+              </Paper>
             </Grid>
           </Grid>
         </Grid>
 
-        <Box mt={2}>
-          {isSubmitted && (
-            <Box mt={3}>
-              <Typography variant="h6">
-                What details from the image did you use to make your guess?
-                <Tooltip
-                  title={
-                    <React.Fragment>
-                      {categories.map((category) => (
-                        <div key={category.name}>
-                          <strong>{category.name}:</strong>{" "}
-                          {category.description}
-                        </div>
-                      ))}
-                    </React.Fragment>
-                  }
-                  placement="right"
-                  arrow
-                >
-                  <IconButton size="small">
-                    <InfoIcon />
-                  </IconButton>
-                </Tooltip>
-                <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  style={{ marginTop: "5px" }}
-                >
-                  (Categories are optional, but help us understand what features
-                  are useful)
-                </Typography>
-              </Typography>
+        {isSubmitted && (
+          <Box className="categories-section">
+            <Typography variant="h6" className="categories-title">
+              <CategoryIcon style={{ marginRight: "12px" }} />
+              What details helped you make your guess?
+              <Tooltip
+                title={
+                  <React.Fragment>
+                    {categories.map((category) => (
+                      <div key={category.name}>
+                        <strong>{category.name}:</strong> {category.description}
+                      </div>
+                    ))}
+                  </React.Fragment>
+                }
+                placement="right"
+                arrow
+              >
+                <IconButton size="small" sx={{ ml: 1 }}>
+                  <InfoIcon />
+                </IconButton>
+              </Tooltip>
+            </Typography>
+            <Typography
+              variant="body2"
+              color="textSecondary"
+              style={{ marginBottom: "16px" }}
+            >
+              Categories help us understand what features are most useful for
+              geolocation
+            </Typography>
 
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Paper elevation={0} sx={{ p: 2, backgroundColor: "#f8f9fa" }}>
                   <Typography
                     variant="subtitle1"
                     display="flex"
                     alignItems="center"
+                    sx={{ mb: 2 }}
                   >
-                    <PersonIcon style={{ marginRight: "8px" }} /> Your
-                    Categories:
+                    <PersonIcon
+                      style={{ marginRight: "8px", color: "#1a73e8" }}
+                    />{" "}
+                    Your Categories:
                   </Typography>
-                  <FormGroup>
-                    <Grid container spacing={1}>
-                      {categories.map((category) => (
-                        <Grid item xs={12} sm={6} key={category.name}>
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                value={category.name}
-                                checked={selectedCategories.includes(
-                                  category.name
-                                )}
-                                onChange={handleCategoryChange}
-                                color="primary"
-                              />
-                            }
-                            label={category.name}
-                          />
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </FormGroup>
-                </Grid>
 
-                {showGptGuess && gptCategories && gptCategories.length > 0 && (
-                  <Grid item xs={12} md={6}>
+                  <div className="category-grid">
+                    {categories.map((category) => (
+                      <FormControlLabel
+                        key={category.name}
+                        control={
+                          <Checkbox
+                            value={category.name}
+                            checked={selectedCategories.includes(category.name)}
+                            onChange={handleCategoryChange}
+                            color="primary"
+                          />
+                        }
+                        label={category.name}
+                      />
+                    ))}
+                  </div>
+                </Paper>
+              </Grid>
+
+              {showGptGuess && gptCategories && gptCategories.length > 0 && (
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{ p: 2, backgroundColor: "#f8f9fa" }}
+                  >
                     <Typography
                       variant="subtitle1"
                       display="flex"
                       alignItems="center"
+                      sx={{ mb: 2 }}
                     >
-                      <ComputerIcon style={{ marginRight: "8px" }} /> GPT's
-                      Categories:
+                      <ComputerIcon
+                        style={{ marginRight: "8px", color: "#0000C0" }}
+                      />{" "}
+                      GPT's Categories:
                     </Typography>
-                    <Box mt={1}>
+
+                    <Box>
                       {gptCategories.map((category) => (
                         <Chip
                           key={category}
                           label={category}
+                          className="category-chip"
                           variant="outlined"
-                          style={{ margin: "0 4px 4px 0" }}
+                          color="primary"
                         />
                       ))}
                     </Box>
-                  </Grid>
-                )}
-              </Grid>
-            </Box>
-          )}
-        </Box>
-      </Box>
+                  </Paper>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        )}
+      </div>
     </div>
   );
 }
