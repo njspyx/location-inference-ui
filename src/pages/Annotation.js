@@ -40,7 +40,7 @@ import SportsScoreIcon from "@mui/icons-material/SportsScore";
 import CategoryIcon from "@mui/icons-material/Category";
 import StraightenIcon from "@mui/icons-material/Straighten";
 
-function Annotation({ user }) {
+function Annotation({ user, setUser }) {
   // ################ STATE VARIABLES ################
   // Page state
   const [isLoading, setIsLoading] = useState(true);
@@ -361,7 +361,8 @@ function Annotation({ user }) {
 
   const handleSignOut = () => {
     if (user?.isGuest) {
-      window.location.href = "/login";
+      // Instead of using window.location.href, just set user to null
+      setUser(null);
     } else {
       auth.signOut();
     }

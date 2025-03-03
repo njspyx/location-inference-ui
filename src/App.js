@@ -39,7 +39,7 @@ function App() {
     <div style={{ marginBottom: "2rem" }}>
       {user ? (
         user.isGuest || emailVerified ? (
-          <Annotation user={user} />
+          <Annotation user={user} setUser={setUser} />
         ) : (
           <Container maxWidth="sm">
             <Paper
